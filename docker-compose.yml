@@ -1,0 +1,25 @@
+services:
+  ratatoskr:
+    build: .
+    image: ratatoskr:latest
+    container_name: ratatoskr
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # A plain host directory works out of the box now -- the container's
+      # entrypoint fixes its ownership/permissions on first start (see
+      # docker-entrypoint.sh), so there's no manual mkdir/chmod step
+      # required before `docker compose up`. This also means the folder is
+      # a normal directory you can point at a TrueNAS dataset or a CasaOS
+      # AppData path if you'd rather manage it there than let Docker pick
+      # a location -- see README.md's "Persistent data" section for the
+      # reasoning and for backup commands.
+      - ./data:/data
+    environment:
+      # How long an unlocked session stays valid without activity, seconds.
+      RATATOSKR_SESSION_TIMEOUT: "1800"
+      # Leave empty unless/until a browser extension needs to call the API
+      # from its own extension origin, e.g.:
+      # RATATOSKR_EXTRA_ORIGINS: "chrome-extension://<id>"
+      RATATOSKR_EXTRA_ORIGINS: ""
