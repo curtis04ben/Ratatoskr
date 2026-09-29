@@ -26,6 +26,12 @@ permissions:
 jobs:
   android:
     runs-on: ubuntu-24.04
+    # Job-wide, not per step: once RATATOSKR_KEYSTORE_FILE is set, Gradle
+    # needs the rest of these to configure the build at all.
+    env:
+      RATATOSKR_KEYSTORE_PASSWORD: ${{ secrets.RATATOSKR_KEYSTORE_PASSWORD }}
+      RATATOSKR_KEY_ALIAS: ${{ secrets.RATATOSKR_KEY_ALIAS }}
+      RATATOSKR_KEY_PASSWORD: ${{ secrets.RATATOSKR_KEY_PASSWORD }}
     defaults:
       run:
         working-directory: clients
@@ -68,10 +74,6 @@ jobs:
         run: ./gradlew --no-daemon :shared:jvmTest
 
       - name: Build APK
-        env:
-          RATATOSKR_KEYSTORE_PASSWORD: ${{ secrets.RATATOSKR_KEYSTORE_PASSWORD }}
-          RATATOSKR_KEY_ALIAS: ${{ secrets.RATATOSKR_KEY_ALIAS }}
-          RATATOSKR_KEY_PASSWORD: ${{ secrets.RATATOSKR_KEY_PASSWORD }}
         run: ./gradlew --no-daemon :android:assembleRelease
 
       - name: Collect APK

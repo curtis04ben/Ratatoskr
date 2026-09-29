@@ -17,6 +17,8 @@ val appVersionCode = appVersion.split(".").map(String::toInt).let { (major, mino
 // see clients/README.md) -- the keystore never lives in the repo. Without
 // it, assembleRelease still builds, just unsigned.
 val releaseKeystore = providers.environmentVariable("RATATOSKR_KEYSTORE_FILE").orNull
+fun signingEnv(name: String): String = providers.environmentVariable(name).orNull
+    ?: error("RATATOSKR_KEYSTORE_FILE is set but $name isn't -- set all four signing variables (clients/README.md)")
 
 android {
     namespace = "com.ratatoskr.android"
@@ -39,9 +41,9 @@ android {
         if (releaseKeystore != null) {
             create("release") {
                 storeFile = file(releaseKeystore)
-                storePassword = providers.environmentVariable("RATATOSKR_KEYSTORE_PASSWORD").get()
-                keyAlias = providers.environmentVariable("RATATOSKR_KEY_ALIAS").get()
-                keyPassword = providers.environmentVariable("RATATOSKR_KEY_PASSWORD").get()
+                storePassword = signingEnv("RATATOSKR_KEYSTORE_PASSWORD")
+                keyAlias = signingEnv("RATATOSKR_KEY_ALIAS")
+                keyPassword = signingEnv("RATATOSKR_KEY_PASSWORD")
             }
         }
     }
