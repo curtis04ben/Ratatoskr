@@ -118,8 +118,10 @@ jobs:
           cd "$RUNNER_TEMP/out"
           sha256sum "Ratatoskr-${VERSION}.apk" > SHA256SUMS
           if [ -n "${RATATOSKR_KEYSTORE_FILE:-}" ]; then
-            apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
-            "$apksigner" verify --print-certs "Ratatoskr-${VERSION}.apk" | tee "$RUNNER_TEMP/certs.txt"
+            set -o pipefail
+            # The build-tools version installed above.
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "Ratatoskr-${VERSION}.apk" | tee "$RUNNER_TEMP/certs.txt"
+            grep -q 'certificate SHA-256 digest' "$RUNNER_TEMP/certs.txt"
           fi
 
       - uses: actions/upload-artifact@v7
