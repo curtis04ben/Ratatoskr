@@ -67,14 +67,24 @@ jobs:
             echo "::warning::No signing secrets; building an unsigned APK"
             exit 0
           fi
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
-          # Fail here, clearly, rather than deep inside Gradle.
-          if ! keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass "$RATATOSKR_KEYSTORE_PASSWORD" \
-               -alias "$RATATOSKR_KEY_ALIAS" >/dev/null 2>&1; then
-            echo "::error::Keystore check failed: RATATOSKR_KEYSTORE_BASE64 isn't a valid keystore, or RATATOSKR_KEYSTORE_PASSWORD / RATATOSKR_KEY_ALIAS don't match it"
+          jks="$RUNNER_TEMP/release.jks"
+          if ! echo "$KEYSTORE_BASE64" | base64 -d > "$jks" 2>/dev/null; then
+            echo "::error::RATATOSKR_KEYSTORE_BASE64 isn't valid base64"
             exit 1
           fi
-          echo "RATATOSKR_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          # The checksum reveals nothing secret; compare it with
+          # `sha256sum ~/ratatoskr-release.jks` to confirm the right file.
+          echo "::notice::Decoded keystore: $(stat -c %s "$jks") bytes, sha256 $(sha256sum "$jks" | cut -c1-16)"
+          # Fail here, with the specific cause, rather than deep inside Gradle.
+          if ! keytool -list -keystore "$jks" -storepass "$RATATOSKR_KEYSTORE_PASSWORD" >/dev/null 2>&1; then
+            echo "::error::Keystore won't open: RATATOSKR_KEYSTORE_PASSWORD is wrong (check for a stray space or newline), or RATATOSKR_KEYSTORE_BASE64 isn't the keystore (compare the checksum above)"
+            exit 1
+          fi
+          if ! keytool -list -keystore "$jks" -storepass "$RATATOSKR_KEYSTORE_PASSWORD" -alias "$RATATOSKR_KEY_ALIAS" >/dev/null 2>&1; then
+            echo "::error::Keystore opens, but has no key named by RATATOSKR_KEY_ALIAS (should be: ratatoskr)"
+            exit 1
+          fi
+          echo "RATATOSKR_KEYSTORE_FILE=$jks" >> "$GITHUB_ENV"
 
       - name: Install Android SDK platform
         # The runner's preinstalled SDK may not have the compileSdk platform yet.
