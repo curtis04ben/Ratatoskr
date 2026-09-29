@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.ratatoskr.shared.api.EntryOut
 import com.ratatoskr.shared.platform.PickedFile
 import com.ratatoskr.shared.platform.PlatformFiles
+import com.ratatoskr.shared.platform.SessionStore
 import com.ratatoskr.shared.state.AppState
 import com.ratatoskr.shared.state.Screen
 import kotlinx.coroutines.delay
@@ -34,11 +35,17 @@ import kotlinx.coroutines.launch
  * `appIcon` is supplied by the platform (each has its own way to load a
  * bitmap resource) and only used on the server-connect screen, the one
  * screen with no existing web-UI equivalent to match. `files` likewise
- * comes from the platform and enables CSV import/export when present.
+ * comes from the platform and enables CSV import/export when present, and
+ * `sessionStore` lets the app remember its server and session across
+ * launches (see AppState.restoreSession).
  */
 @Composable
-fun RatatoskrApp(appIcon: (@Composable () -> Unit)? = null, files: PlatformFiles? = null) {
-    val appState = remember { AppState() }
+fun RatatoskrApp(
+    appIcon: (@Composable () -> Unit)? = null,
+    files: PlatformFiles? = null,
+    sessionStore: SessionStore? = null,
+) {
+    val appState = remember { AppState(sessionStore) }
     var editingEntry by remember { mutableStateOf<EntryOut?>(null) }
     var showNewEntryDialog by remember { mutableStateOf(false) }
     var showGeneratorDialog by remember { mutableStateOf(false) }
@@ -47,6 +54,8 @@ fun RatatoskrApp(appIcon: (@Composable () -> Unit)? = null, files: PlatformFiles
     var importFile by remember { mutableStateOf<PickedFile?>(null) }
     var importErrors by remember { mutableStateOf<List<String>>(emptyList()) }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) { appState.restoreSession() }
 
     // Same 2.4s lifetime as the web UI's toast().
     LaunchedEffect(appState.notice) {

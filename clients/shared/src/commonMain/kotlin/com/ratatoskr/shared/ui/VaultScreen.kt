@@ -5,7 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,76 +50,109 @@ fun VaultScreen(
     var query by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    Column(modifier = Modifier.fillMaxSize().background(RatatoskrColors.Bg)) {
-        // ---------- header ----------
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(width = 1.dp, color = RatatoskrColors.Hairline)
-                .padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "Ratatoskr",
-                style = MaterialTheme.typography.titleMedium,
-                color = RatatoskrColors.Text,
-                modifier = Modifier.weight(1f),
-            )
-            if (appState.role.isNotBlank()) {
-                Box(
-                    modifier = Modifier
-                        .border(1.dp, RatatoskrColors.Verdigris, RoundedCornerShape(3.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                ) {
-                    Text(appState.role, style = MaterialTheme.typography.labelSmall, color = RatatoskrColors.Verdigris)
+    // Phones are too narrow for the desktop's one-line header and toolbar,
+    // so below this width the role badge sits under the title and the
+    // search field gets its own row above the (wrapping) buttons.
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val compact = maxWidth < 560.dp
+        val gutter = if (compact) 12.dp else 20.dp
+
+        Column(modifier = Modifier.fillMaxSize().background(RatatoskrColors.Bg)) {
+            // ---------- header ----------
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(width = 1.dp, color = RatatoskrColors.Hairline)
+                    .padding(horizontal = gutter, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val roleBadge: @Composable () -> Unit = {
+                    Box(
+                        modifier = Modifier
+                            .border(1.dp, RatatoskrColors.Verdigris, RoundedCornerShape(3.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    ) {
+                        Text(appState.role, style = MaterialTheme.typography.labelSmall, color = RatatoskrColors.Verdigris)
+                    }
                 }
-                Row(modifier = Modifier.padding(start = 12.dp)) {
-                    GhostButton("Generate", onClick = onOpenGenerator)
-                    GhostButton("Lock", onClick = { scope.launch { appState.lock() } }, modifier = Modifier.padding(start = 8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Ratatoskr",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = RatatoskrColors.Text,
+                    )
+                    if (compact && appState.role.isNotBlank()) roleBadge()
+                }
+                if (appState.role.isNotBlank()) {
+                    if (!compact) roleBadge()
+                    Row(modifier = Modifier.padding(start = 12.dp)) {
+                        GhostButton("Generate", onClick = onOpenGenerator)
+                        GhostButton("Lock", onClick = { scope.launch { appState.lock() } }, modifier = Modifier.padding(start = 8.dp))
+                    }
                 }
             }
-        }
 
-        // ---------- toolbar ----------
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            RatatoskrTextField(
-                value = query,
-                onValueChange = { query = it },
-                label = "Search",
-                modifier = Modifier.weight(1f),
-            )
+            // ---------- toolbar ----------
             // Visitors are read-only: no import or new entry, same as showAppScreen() in app.js
             val isVisitor = appState.role == Roles.VISITOR
-            onExport?.let { CautionButton("Export\u2026", onClick = it) }
-            if (!isVisitor) {
-                onImport?.let { GhostButton("Import", onClick = it) }
-                PrimaryButton("+ New entry", onClick = onNewEntry)
+            val toolbarButtons: @Composable () -> Unit = {
+                onExport?.let { CautionButton("Export\u2026", onClick = it) }
+                if (!isVisitor) {
+                    onImport?.let { GhostButton("Import", onClick = it) }
+                    PrimaryButton("+ New entry", onClick = onNewEntry)
+                }
             }
-        }
-
-        ErrorText(appState.errorMessage, modifier = Modifier.padding(horizontal = 20.dp))
-
-        // ---------- entry list ----------
-        val filtered = appState.entries.filter {
-            query.isBlank() || it.site.contains(query, ignoreCase = true) || it.username.contains(query, ignoreCase = true)
-        }
-
-        if (appState.entries.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    "Nothing here yet. Entries you can see will appear here.",
-                    color = RatatoskrColors.TextMuted,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+            if (compact) {
+                Column(modifier = Modifier.fillMaxWidth().padding(gutter)) {
+                    RatatoskrTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        label = "Search",
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    ) {
+                        toolbarButtons()
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(gutter),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RatatoskrTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        label = "Search",
+                        modifier = Modifier.weight(1f),
+                    )
+                    toolbarButtons()
+                }
             }
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-                items(filtered, key = { it.id }) { entry ->
-                    EntryRow(entry, onClick = { onEditEntry(entry) })
+
+            ErrorText(appState.errorMessage, modifier = Modifier.padding(horizontal = gutter))
+
+            // ---------- entry list ----------
+            val filtered = appState.entries.filter {
+                query.isBlank() || it.site.contains(query, ignoreCase = true) || it.username.contains(query, ignoreCase = true)
+            }
+
+            if (appState.entries.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        "Nothing here yet. Entries you can see will appear here.",
+                        color = RatatoskrColors.TextMuted,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = gutter)) {
+                    items(filtered, key = { it.id }) { entry ->
+                        EntryRow(entry, onClick = { onEditEntry(entry) })
+                    }
                 }
             }
         }

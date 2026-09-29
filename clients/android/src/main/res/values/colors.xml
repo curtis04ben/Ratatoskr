@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- RatatoskrColors.Bg in the shared theme -->
+    <color name="ic_launcher_background">#12181C</color>
+    <color name="window_background">#12181C</color>
+</resources>

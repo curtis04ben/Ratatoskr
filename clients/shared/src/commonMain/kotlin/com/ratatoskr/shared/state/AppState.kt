@@ -9,6 +9,8 @@ import com.ratatoskr.shared.api.ImportResult
 import com.ratatoskr.shared.api.RatatoskrApiClient
 import com.ratatoskr.shared.api.RatatoskrApiException
 import com.ratatoskr.shared.api.RatatoskrConnectionException
+import com.ratatoskr.shared.platform.SavedSession
+import com.ratatoskr.shared.platform.SessionStore
 
 /** Which top-level screen is showing. Mirrors the web UI's lock-screen
  * forms (setup/unlock/invite) and the main app screen -- see
@@ -31,8 +33,11 @@ sealed class Screen {
  * ViewModel wrapper (e.g. androidx.lifecycle.ViewModel on Android) can
  * hold and scope an instance of this later without this class needing to
  * change.
+ *
+ * `sessionStore`, when the platform supplies one, remembers the server and
+ * session token across launches -- see restoreSession().
  */
-class AppState {
+class AppState(private val sessionStore: SessionStore? = null) {
     var screen by mutableStateOf<Screen>(Screen.ServerConnect)
         private set
 
@@ -69,6 +74,7 @@ class AppState {
             val status = candidate.status()
             client = candidate
             serverUrl = normalized
+            sessionStore?.save(SavedSession(normalized, token = null))
             screen = if (status.initialized) Screen.Unlock else Screen.Setup
         } catch (e: RatatoskrConnectionException) {
             errorMessage = e.message
@@ -76,6 +82,40 @@ class AppState {
             errorMessage = e.detail
         } finally {
             isLoading = false
+        }
+    }
+
+    /** Called once at launch: reconnects to the saved server and, if a
+     * saved token is still accepted, goes straight to the vault. An expired
+     * or revoked token lands on Unlock for the same server; an unreachable
+     * server lands on the connect screen with the address filled in. */
+    suspend fun restoreSession() {
+        val store = sessionStore ?: return
+        val saved = store.load() ?: return
+        screen = Screen.CheckingServer
+        connectToServer(saved.serverUrl)
+        if (client == null) {
+            serverUrl = saved.serverUrl // prefills the connect screen
+            screen = Screen.ServerConnect
+            return
+        }
+        val token = saved.token
+        if (token == null || screen != Screen.Unlock) return
+
+        val api = requireClient()
+        api.token = token
+        try {
+            val me = api.me()
+            username = me.username
+            role = me.role
+            loadEntries()
+            screen = Screen.Vault
+        } catch (e: RatatoskrApiException) {
+            api.token = null
+            store.save(SavedSession(serverUrl, token = null))
+        } catch (e: RatatoskrConnectionException) {
+            api.token = null
+            errorMessage = e.message
         }
     }
 
@@ -92,6 +132,7 @@ class AppState {
         client = null
         serverUrl = ""
         errorMessage = null
+        sessionStore?.clear()
         screen = Screen.ServerConnect
     }
 
@@ -113,6 +154,7 @@ class AppState {
         try {
             val response = action()
             requireClient().token = response.token
+            sessionStore?.save(SavedSession(serverUrl, response.token))
             username = response.username
             role = response.role
             loadEntries()
@@ -213,6 +255,7 @@ class AppState {
             // local state below even if the network call fails
         }
         requireClient().token = null
+        sessionStore?.save(SavedSession(serverUrl, token = null))
         entries = emptyList()
         username = ""
         role = ""

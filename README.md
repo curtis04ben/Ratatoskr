@@ -15,8 +15,14 @@ releases named "Ratatoskr Linux client" (tags `linux-v*`):
 - **Any distro, no install:** `Ratatoskr-x86_64.AppImage`
 
 Once installed, Ratatoskr appears in your application launcher. No Java
-install is needed. The client connects to a Ratatoskr server you host
-yourself; see [`server/README.md`](server/README.md).
+install is needed.
+
+The Android app is published separately, as releases named "Ratatoskr
+Android" (tags `android-v*`): download `Ratatoskr-<version>.apk` on your
+phone and open it. It needs Android 8.0 or newer.
+
+Both clients connect to a Ratatoskr server you host yourself; see
+[`server/README.md`](server/README.md).
 
 ## Repository structure
 

@@ -142,12 +142,30 @@ skipped because its generated `.desktop` file can't carry the app ID or
 `StartupWMClass`. Pushing a `linux-vX.Y.Z` tag publishes a GitHub Release
 via `.github/workflows/linux-client-release.yml`. Details: `clients/README.md`.
 
-### Phase 3 — Android
+### Phase 3 — Android (in progress)
 
-Mostly reuse: `clients/shared`'s screens carry over directly. Real new
-work: `EncryptedSharedPreferences`/Keystore-backed session storage,
-Android manifest/permissions, an `androidx` module joining `settings.gradle.kts`
-as a sibling of `:shared`/`:desktop`.
+Mostly reuse: `clients/shared`'s screens carry over directly. `:shared`
+gained an Android target (AGP's KMP library plugin, OkHttp engine) and
+`clients/android` is the app module — AGP 9 requires the app in its own
+module rather than an Android target on the KMP module. Real new work:
+
+- ✅ Session storage: `SessionStore` in commonMain (optional, like
+  `PlatformFiles`; desktop still passes none), implemented on Android as
+  `KeystoreSessionStore` — the token AES-GCM-encrypted under a
+  non-exportable Keystore key. Not `EncryptedSharedPreferences`: that
+  library was deprecated in 2025. Server address + token survive process
+  death; an expired token lands on Unlock for the same server.
+- ✅ Manifest: `INTERNET` only; cleartext allowed (homelab HTTP over
+  Tailscale) with an in-app warning on non-HTTPS addresses; no backups of
+  the session; `FLAG_SECURE`.
+- ✅ Shared UI made width-adaptive for phones (max-width columns, scrolling
+  forms, compact vault toolbar) — no visual change on desktop.
+- ✅ CSV import/export via the Storage Access Framework.
+- ✅ Signed APK released via `android-vX.Y.Z` tags
+  (`.github/workflows/android-client-release.yml`).
+
+minSdk 26 (Android 8.0) — chosen because that's where the Autofill
+Framework starts, so the stretch goal below doesn't force a bump.
 
 Worth a stretch-goal look once the core app is solid: Android's system
 Autofill Framework — filling native app logins, not just browser forms,

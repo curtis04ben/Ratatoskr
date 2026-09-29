@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: keep the saved server/session out of cloud backups and
+     device-to-device transfers. The session token is encrypted with a
+     Keystore key that never leaves this device, so a copy would be useless
+     anyway; this just avoids carrying it around. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>

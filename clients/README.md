@@ -2,7 +2,8 @@
 
 Kotlin Multiplatform + Compose Multiplatform. `shared/` holds the API
 client, models and every screen; `desktop/` is the desktop entry point and
-packaging. Architecture and phase plan: [`docs/development-plan.md`](../docs/development-plan.md).
+packaging; `android/` is the Android app. Architecture and phase plan:
+[`docs/development-plan.md`](../docs/development-plan.md).
 
 Needs JDK 21. On Fedora, packaging also needs `java-21-openjdk-jmods`
 (jlink can't build the bundled runtime without it); Temurin JDKs include it.
@@ -88,3 +89,81 @@ the tests, builds all three packages, and publishes them with a
 refuses to release if the tag doesn't match `ratatoskrDesktopVersion`.
 Running the workflow manually from the Actions tab builds the packages as
 a workflow artifact without releasing anything.
+
+## Android
+
+`android/` is a thin Android app around the same shared screens. What's
+Android-specific:
+
+- **`MainActivity`** -- entry point. Sets `FLAG_SECURE` (no screenshots,
+  screen recording or recent-apps preview of the vault) and draws
+  edge-to-edge with content padded clear of system bars and the keyboard.
+- **`KeystoreSessionStore`** -- remembers the server and session token
+  across launches, since Android kills backgrounded apps freely. The token
+  is AES-256-GCM encrypted under a non-exportable Android Keystore key;
+  the master password is never stored. (`EncryptedSharedPreferences` is
+  deprecated, so this uses the Keystore directly.) Excluded from backups.
+- **`AndroidFiles`** -- CSV import/export via the system file picker, so
+  no storage permission is needed.
+- **Manifest** -- `INTERNET` is the only permission. Plain `http://` is
+  allowed because home servers usually don't have TLS; the connect screen
+  warns when the address isn't `https://`.
+
+App ID `io.github.curtis04ben.ratatoskr` (lowercase by Android
+convention). Like the desktop ID, it's permanent once released. Minimum
+Android 8.0 (API 26), which is where the Autofill Framework (a Phase 3.x
+goal) starts.
+
+### Building and running
+
+Needs the Android SDK (`ANDROID_HOME`, or `sdk.dir` in
+`clients/local.properties`, which is git-ignored).
+
+```bash
+./gradlew :android:installDebug     # build + install on a connected phone/emulator
+./gradlew :android:assembleRelease  # release APK (signed only if the env vars below are set)
+```
+
+Debug builds install as `io.github.curtis04ben.ratatoskr.debug`, alongside
+a release install rather than replacing it.
+
+### Signing
+
+Android only accepts an update signed with the same key as the installed
+app, so the release key is permanent: **if it's lost, every user has to
+uninstall and reinstall** (losing their saved server). Back it up somewhere
+safe outside this machine.
+
+Create it once, on your own machine (it prompts for a password):
+
+```bash
+keytool -genkeypair -v -keystore ~/ratatoskr-release.jks -alias ratatoskr \
+    -keyalg RSA -keysize 4096 -validity 36500 -dname "CN=Ratatoskr"
+base64 -w0 ~/ratatoskr-release.jks > ~/ratatoskr-release.jks.b64
+```
+
+Then add four repository secrets in GitHub (Settings -> Secrets and
+variables -> Actions): `RATATOSKR_KEYSTORE_BASE64` (the `.b64` file's
+contents), `RATATOSKR_KEYSTORE_PASSWORD`, `RATATOSKR_KEY_ALIAS`
+(`ratatoskr`), and `RATATOSKR_KEY_PASSWORD` (the same password, since
+PKCS12 keystores use one). Delete the `.b64` file afterwards. The keystore
+never goes in the repo.
+
+To sign locally, set the same variables, with `RATATOSKR_KEYSTORE_FILE`
+pointing at the `.jks` instead of the base64 one.
+
+### Releases
+
+Versioned separately as `ratatoskrAndroidVersion` in `gradle.properties`;
+`versionCode` is derived from it (`1.2.3` -> `10203`), so it always
+increases. Bump, commit, push, then:
+
+```bash
+git tag android-v0.1.1
+git push origin android-v0.1.1
+```
+
+`.github/workflows/android-client-release.yml` tests, builds and signs the
+APK, and publishes `Ratatoskr-<version>.apk` + `SHA256SUMS` as the release
+"Ratatoskr Android v0.1.1", with install steps and the signing
+certificate's fingerprint in the notes. It won't release unsigned.

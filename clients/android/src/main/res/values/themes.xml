@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Only what's visible before Compose draws: a dark window instead of
+         a white flash at launch. Everything else is the shared Compose theme. -->
+    <style name="Theme.Ratatoskr" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

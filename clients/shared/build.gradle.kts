@@ -3,14 +3,20 @@ plugins {
     kotlin("plugin.serialization")
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.android.kotlin.multiplatform.library")
 }
 
 kotlin {
     jvm()
-    // android { } and iosX64()/iosArm64()/iosSimulatorArm64() targets join
-    // here in their respective phases -- commonMain below is written to be
-    // ready for that without changes; only per-target engine wiring
-    // (already isolated to each target's own source set) needs adding.
+    android {
+        namespace = "com.ratatoskr.shared"
+        compileSdk = 37
+        minSdk = 26
+    }
+    // iosX64()/iosArm64()/iosSimulatorArm64() join here in Phase 6 --
+    // commonMain below is written to be ready for that without changes;
+    // only per-target engine wiring (already isolated to each target's own
+    // source set) needs adding.
 
     sourceSets {
         commonMain {
@@ -42,6 +48,13 @@ kotlin {
                 // quirks. Revisit only if a JVM-specific feature (e.g.
                 // fine-grained connection pooling control) is ever needed.
                 implementation("io.ktor:ktor-client-cio:3.6.0")
+            }
+        }
+        androidMain {
+            dependencies {
+                // OkHttp is Ktor's recommended Android engine: it uses the
+                // platform's TLS and network stack.
+                implementation("io.ktor:ktor-client-okhttp:3.6.0")
             }
         }
     }

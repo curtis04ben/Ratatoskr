@@ -19,3 +19,4 @@ rootProject.name = "ratatoskr-clients"
 
 include(":shared")
 include(":desktop")
+include(":android")

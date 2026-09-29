@@ -64,9 +64,9 @@ internal fun parseErrorDetail(body: String): String? {
  * One instance per configured server. `baseUrl` is whatever the user typed
  * on the server-connect screen (e.g. "http://tempinfra.tail92211e.ts.net:8000"),
  * normalized to strip a trailing slash. `token` is set after a successful
- * unlock/setup/accept-invite and cleared on lock -- held in memory only,
- * matching the same "session, not persisted forever" posture the web UI
- * uses with sessionStorage.
+ * unlock/setup/accept-invite and cleared on lock -- held in memory here;
+ * AppState persists it (encrypted) only where the platform supplies a
+ * SessionStore, and the server's idle timeout bounds it either way.
  */
 class RatatoskrApiClient(baseUrl: String) {
     private val base = baseUrl.trimEnd('/')

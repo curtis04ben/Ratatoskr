@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.MaterialTheme
@@ -77,7 +80,8 @@ fun GeneratorDialog(
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
-                .width(400.dp)
+                .widthIn(max = 400.dp).fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .background(RatatoskrColors.Panel, RoundedCornerShape(8.dp))
                 .border(1.dp, RatatoskrColors.Hairline, RoundedCornerShape(8.dp))
                 .padding(24.dp),

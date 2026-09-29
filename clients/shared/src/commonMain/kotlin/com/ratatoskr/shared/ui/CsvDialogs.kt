@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,7 +41,7 @@ import kotlin.time.Clock
 private fun CsvDialogCard(title: String, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
-            .width(440.dp)
+            .widthIn(max = 440.dp).fillMaxWidth()
             .background(RatatoskrColors.Panel, RoundedCornerShape(8.dp))
             .border(1.dp, RatatoskrColors.Hairline, RoundedCornerShape(8.dp))
             .padding(24.dp),

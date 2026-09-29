@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,12 +32,15 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun ServerConnectScreen(appState: AppState, appIcon: (@Composable () -> Unit)? = null) {
-    var url by remember { mutableStateOf("") }
+    // Keyed on serverUrl so a saved server that couldn't be reached at
+    // launch (AppState.restoreSession) shows up here, ready to retry.
+    var url by remember(appState.serverUrl) { mutableStateOf(appState.serverUrl) }
     val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
-            modifier = Modifier.width(360.dp).padding(24.dp),
+            modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth()
+                .verticalScroll(rememberScrollState()).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             appIcon?.invoke()
@@ -65,6 +70,17 @@ fun ServerConnectScreen(appState: AppState, appIcon: (@Composable () -> Unit)? =
                 color = RatatoskrColors.TextMuted,
                 modifier = Modifier.padding(top = 6.dp, bottom = 16.dp),
             )
+            // Plain HTTP is allowed (homelab servers rarely have TLS), but
+            // the master password crosses the network, so say so.
+            if (url.isNotBlank() && !url.trim().startsWith("https://", ignoreCase = true)) {
+                Text(
+                    "Not HTTPS: your master password is sent unencrypted unless the connection " +
+                        "itself is private, e.g. over Tailscale or your home network.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = RatatoskrColors.BrassBright,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                )
+            }
 
             if (appState.isLoading) {
                 CircularProgressIndicator(color = RatatoskrColors.Brass, modifier = Modifier.padding(8.dp))
