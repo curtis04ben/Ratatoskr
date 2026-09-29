@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.curtis04ben.Ratatoskr</id>
+  <name>Ratatoskr</name>
+  <summary>Client for the self-hosted Ratatoskr password manager</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <description>
+    <p>
+      Ratatoskr is a self-hosted, multi-user password manager. This is its
+      native desktop client: connect to your own Ratatoskr server, unlock
+      your vault, and search, create and edit entries, with live TOTP codes,
+      a password generator and CSV import/export.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.curtis04ben.Ratatoskr.desktop</launchable>
+  <url type="homepage">https://github.com/curtis04ben/Ratatoskr</url>
+  <url type="bugtracker">https://github.com/curtis04ben/Ratatoskr/issues</url>
+  <developer id="io.github.curtis04ben">
+    <name>Ben Curtis</name>
+  </developer>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="@VERSION@" date="@DATE@"/>
+  </releases>
+</component>

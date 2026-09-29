@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Ratatoskr
+GenericName=Password Manager
+Comment=Native client for the self-hosted Ratatoskr password manager
+Exec=ratatoskr
+Icon=io.github.curtis04ben.Ratatoskr
+Terminal=false
+Categories=Utility;
+Keywords=password;vault;totp;2fa;security;
+StartupWMClass=com-ratatoskr-desktop-MainKt

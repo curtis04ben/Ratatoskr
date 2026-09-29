@@ -133,10 +133,14 @@ changes — admin can currently only do these via the web UI), and CSV
 import/export. These are real gaps, not forgotten — they're sequenced
 after the core loop is solid rather than blocking a first usable version.
 
-Packaging: Compose Desktop's built-in `jpackage`-based packager produces
-`.deb`/`.rpm` natively. AppImage (mentioned in earlier planning) isn't a
-native `jpackage` output — it needs `appimagetool` wrapping the `jpackage`
-result as an extra step, achievable later if wanted.
+Packaging (done): Compose Desktop's `createDistributable` (jpackage)
+builds a self-contained app image, and `clients/desktop/packaging/linux/`
+wraps it as AppImage (appimagetool) plus `.deb`/`.rpm` (nfpm), with a
+Freedesktop `.desktop` entry, icons and AppStream metadata under app ID
+`io.github.curtis04ben.Ratatoskr`. jpackage's own `.deb`/`.rpm` output was
+skipped because its generated `.desktop` file can't carry the app ID or
+`StartupWMClass`. Pushing a `linux-vX.Y.Z` tag publishes a GitHub Release
+via `.github/workflows/linux-client-release.yml`. Details: `clients/README.md`.
 
 ### Phase 3 — Android
 

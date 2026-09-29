@@ -1,0 +1,107 @@
+# Builds the Linux desktop client packages and publishes them as a GitHub
+# Release of their own -- separate from any server release, following the
+# per-component tag scheme in docs/development-plan.md.
+#
+#   git tag linux-v0.1.0 && git push origin linux-v0.1.0
+#     -> tests, builds AppImage + .deb + .rpm, creates release "Ratatoskr Linux client v0.1.0"
+#
+# Running it manually (Actions tab -> Run workflow) builds the same
+# packages as a downloadable workflow artifact without creating a release.
+name: Linux client release
+
+on:
+  push:
+    tags: ["linux-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  NFPM_VERSION: "2.47.0"
+  NFPM_SHA256: "0660ca602b2d2d2ae4781a06c692b3eeb9d437ffea05b831d76e41f4a3188783"
+  APPIMAGETOOL_VERSION: "1.9.1"
+  APPIMAGETOOL_SHA256: "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: clients
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read version
+        id: version
+        run: |
+          version="$(sed -n 's/^ratatoskrDesktopVersion=//p' gradle.properties)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "linux-v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match ratatoskrDesktopVersion=$version in clients/gradle.properties"
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Test
+        run: ./gradlew --no-daemon :shared:jvmTest
+
+      - name: Build app image
+        run: ./gradlew --no-daemon :desktop:createDistributable
+
+      - name: Install packaging tools
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          cd "$RUNNER_TEMP"
+          curl -fsSL -o nfpm.tar.gz "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz"
+          echo "$NFPM_SHA256  nfpm.tar.gz" | sha256sum -c -
+          tar xzf nfpm.tar.gz -C bin nfpm
+          curl -fsSL -o bin/appimagetool "https://github.com/AppImage/appimagetool/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
+          echo "$APPIMAGETOOL_SHA256  bin/appimagetool" | sha256sum -c -
+          chmod +x bin/appimagetool
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Build packages
+        # CI runners have no FUSE; let appimagetool unpack itself instead.
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: desktop/packaging/linux/build-packages.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ratatoskr-linux-${{ steps.version.outputs.version }}
+          path: clients/desktop/build/linux-packages/*
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cat > "$RUNNER_TEMP/notes.md" <<EOF
+          Ratatoskr desktop client for Linux (x86_64). Connects to your own Ratatoskr server -- the server itself isn't part of this release; see server/README.md.
+
+          ## Which file?
+
+          | You're on | Download | Install |
+          |---|---|---|
+          | Fedora / RHEL / openSUSE | \`ratatoskr-${VERSION}-1.x86_64.rpm\` | \`sudo dnf install ./ratatoskr-${VERSION}-1.x86_64.rpm\` |
+          | Debian / Ubuntu / Mint | \`ratatoskr_${VERSION}_amd64.deb\` | \`sudo apt install ./ratatoskr_${VERSION}_amd64.deb\` |
+          | Anything else, or no install | \`Ratatoskr-x86_64.AppImage\` | \`chmod +x Ratatoskr-x86_64.AppImage\` then run it |
+
+          The .rpm and .deb add Ratatoskr to your application launcher (search "Ratatoskr"). An AppImage runs without installing but doesn't add a launcher entry by itself -- use Gear Lever or AppImageLauncher for that.
+
+          No system Java needed: a Java runtime is bundled. Verify downloads with \`sha256sum -c SHA256SUMS\`.
+          EOF
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Ratatoskr Linux client v${VERSION}" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            desktop/build/linux-packages/*

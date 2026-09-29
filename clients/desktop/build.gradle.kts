@@ -23,31 +23,47 @@ kotlin {
     }
 }
 
+// The desktop app's single authoritative version lives in
+// clients/gradle.properties (ratatoskrDesktopVersion). The Linux release
+// workflow checks the pushed linux-vX.Y.Z tag against it, and
+// packaging/linux/build-packages.sh reads it for the package filenames.
+val appVersion = providers.gradleProperty("ratatoskrDesktopVersion").get()
+
 compose.desktop {
     application {
         mainClass = "com.ratatoskr.desktop.MainKt"
 
         nativeDistributions {
-            // Phase 2 targets Linux; jpackage's TargetFormat.Deb/Rpm cover
-            // that directly. Msi/Exe (Windows) and Dmg (macOS) are listed
-            // here too, ready for Phases 4/5 -- they're a no-op on a Linux
+            // Linux packages are NOT built with jpackage's own Deb/Rpm
+            // formats: its generated .desktop file can't carry our app ID,
+            // StartupWMClass (needed for KDE/GNOME to match the window to
+            // its launcher entry) or AppStream metadata. Instead
+            // `createDistributable` builds the self-contained app image
+            // (bundled JRE + launcher) and packaging/linux/build-packages.sh
+            // wraps that one image as AppImage, .deb and .rpm -- see
+            // clients/README.md. Msi/Exe (Windows) and Dmg (macOS) stay
+            // here, ready for Phases 4/5 -- they're a no-op on a Linux
             // build machine (jpackage only produces the formats native to
             // the OS it runs on; Windows/macOS installers need to actually
             // be built on those OSes, not cross-compiled from Linux -- see
             // docs/development-plan.md).
-            targetFormats(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Dmg)
+            targetFormats(TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Dmg)
+
+            // jlink only bundles the JDK modules listed here; these were
+            // added from `./gradlew :desktop:suggestRuntimeModules` after
+            // the default set left the packaged app without modules its
+            // dependencies need at runtime. Re-run that task after adding
+            // dependencies.
+            modules("java.instrument", "java.management", "jdk.unsupported")
 
             packageName = "Ratatoskr"
-            packageVersion = "0.1.0"
+            packageVersion = appVersion
             description = "Self-hosted password manager -- native client"
             copyright = "© Ratatoskr project"
             vendor = "Ratatoskr"
 
             linux {
                 iconFile.set(project.file("icons/ratatoskr_512.png"))
-                packageName = "ratatoskr"
-                debMaintainer = "noreply@example.invalid" // update before a real .deb release
-                menuGroup = "Utility"
             }
             windows {
                 iconFile.set(project.file("icons/ratatoskr_512.png")) // .ico conversion needed before Phase 4 -- see dev plan

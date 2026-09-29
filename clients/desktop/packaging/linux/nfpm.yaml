@@ -1,0 +1,81 @@
+# nfpm config for the Ratatoskr desktop client's .deb and .rpm.
+# Not run directly -- build-packages.sh stages the files and fills in the
+# ${...} placeholders below. Both packages install the same layout:
+#   /opt/ratatoskr/                 self-contained app image (bundled JRE)
+#   /usr/bin/ratatoskr              symlink to the launcher
+#   /usr/share/applications/        .desktop entry (app launcher / KDE menu)
+#   /usr/share/icons/hicolor/       icons
+#   /usr/share/metainfo/            AppStream metadata (software centres)
+name: ratatoskr
+arch: amd64
+platform: linux
+version: ${RATATOSKR_VERSION}
+release: 1
+section: utils
+priority: optional
+maintainer: Ben Curtis <curtis04ben@gmail.com>
+vendor: Ratatoskr
+homepage: https://github.com/curtis04ben/Ratatoskr
+license: LicenseRef-Unspecified
+description: |
+  Native desktop client for the self-hosted Ratatoskr password manager.
+  Bundles its own Java runtime; no system Java is needed.
+
+contents:
+  - src: ${RATATOSKR_STAGE}/opt/ratatoskr
+    dst: /opt/ratatoskr
+    type: tree
+  - src: /opt/ratatoskr/bin/Ratatoskr
+    dst: /usr/bin/ratatoskr
+    type: symlink
+  # Listed file by file (not as a tree) so the packages don't claim
+  # ownership of shared system directories like /usr/share/icons.
+  - src: ${RATATOSKR_STAGE}/usr/share/applications/io.github.curtis04ben.Ratatoskr.desktop
+    dst: /usr/share/applications/io.github.curtis04ben.Ratatoskr.desktop
+  - src: ${RATATOSKR_STAGE}/usr/share/metainfo/io.github.curtis04ben.Ratatoskr.metainfo.xml
+    dst: /usr/share/metainfo/io.github.curtis04ben.Ratatoskr.metainfo.xml
+  - src: ${RATATOSKR_STAGE}/usr/share/icons/hicolor/48x48/apps/io.github.curtis04ben.Ratatoskr.png
+    dst: /usr/share/icons/hicolor/48x48/apps/io.github.curtis04ben.Ratatoskr.png
+  - src: ${RATATOSKR_STAGE}/usr/share/icons/hicolor/128x128/apps/io.github.curtis04ben.Ratatoskr.png
+    dst: /usr/share/icons/hicolor/128x128/apps/io.github.curtis04ben.Ratatoskr.png
+  - src: ${RATATOSKR_STAGE}/usr/share/icons/hicolor/256x256/apps/io.github.curtis04ben.Ratatoskr.png
+    dst: /usr/share/icons/hicolor/256x256/apps/io.github.curtis04ben.Ratatoskr.png
+  - src: ${RATATOSKR_STAGE}/usr/share/icons/hicolor/512x512/apps/io.github.curtis04ben.Ratatoskr.png
+    dst: /usr/share/icons/hicolor/512x512/apps/io.github.curtis04ben.Ratatoskr.png
+
+# Refresh the icon cache and menu database so the launcher entry and its
+# icon show up immediately, without logging out.
+scripts:
+  postinstall: ${RATATOSKR_PACKAGING}/refresh-desktop.sh
+  postremove: ${RATATOSKR_PACKAGING}/refresh-desktop.sh
+
+# The bundled JRE's AWT/font code and Skia load these system libraries.
+overrides:
+  deb:
+    depends:
+      - libx11-6
+      - libxext6
+      - libxrender1
+      - libxtst6
+      - libxi6
+      - libfreetype6
+      - libfontconfig1
+      - libgl1
+  rpm:
+    depends:
+      - libX11
+      - libXext
+      - libXrender
+      - libXtst
+      - libXi
+      - freetype
+      - fontconfig
+      - libglvnd-glx
+
+rpm:
+  group: Applications/System
+  summary: Client for the self-hosted Ratatoskr password manager
+
+deb:
+  fields:
+    Bugs: https://github.com/curtis04ben/Ratatoskr/issues
