@@ -8,15 +8,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import com.ratatoskr.shared.ui.RatatoskrApp
 import com.ratatoskr.shared.ui.RatatoskrColors
 
@@ -52,13 +49,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             Box(modifier = Modifier.fillMaxSize().background(RatatoskrColors.Bg).safeDrawingPadding()) {
                 RatatoskrApp(
-                    appIcon = {
-                        Image(
-                            painter = painterResource(R.drawable.ratatoskr_icon),
-                            contentDescription = null,
-                            modifier = Modifier.size(84.dp),
-                        )
-                    },
+                    appIcon = painterResource(R.drawable.ratatoskr_icon),
                     files = files,
                     sessionStore = sessionStore,
                 )

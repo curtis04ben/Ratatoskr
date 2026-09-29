@@ -1,11 +1,8 @@
 package com.ratatoskr.desktop
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.dp
@@ -54,13 +51,7 @@ fun main() = application {
         val files = remember { DesktopFiles(window) }
         RatatoskrApp(
             files = files,
-            appIcon = {
-                Image(
-                    painter = iconPainter,
-                    contentDescription = null,
-                    modifier = Modifier.size(84.dp),
-                )
-            },
+            appIcon = iconPainter,
         )
     }
 }

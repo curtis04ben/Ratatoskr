@@ -1,10 +1,12 @@
 package com.ratatoskr.shared.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,6 +21,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.ratatoskr.shared.state.AppState
@@ -31,7 +34,7 @@ import kotlinx.coroutines.launch
  * that every native client phase in the dev plan calls for.
  */
 @Composable
-fun ServerConnectScreen(appState: AppState, appIcon: (@Composable () -> Unit)? = null) {
+fun ServerConnectScreen(appState: AppState, appIcon: Painter? = null) {
     // Keyed on serverUrl so a saved server that couldn't be reached at
     // launch (AppState.restoreSession) shows up here, ready to retry.
     var url by remember(appState.serverUrl) { mutableStateOf(appState.serverUrl) }
@@ -43,7 +46,7 @@ fun ServerConnectScreen(appState: AppState, appIcon: (@Composable () -> Unit)? =
                 .verticalScroll(rememberScrollState()).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            appIcon?.invoke()
+            appIcon?.let { Image(painter = it, contentDescription = null, modifier = Modifier.size(84.dp)) }
 
             Text(
                 "Ratatoskr",

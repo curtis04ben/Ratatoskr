@@ -14,6 +14,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import com.ratatoskr.shared.api.EntryOut
 import com.ratatoskr.shared.platform.PickedFile
@@ -32,16 +33,16 @@ import kotlinx.coroutines.launch
  * Main.kt now; Android/iOS's own entry points in their phases), wrapped
  * in RatatoskrTheme.
  *
- * `appIcon` is supplied by the platform (each has its own way to load a
- * bitmap resource) and only used on the server-connect screen, the one
- * screen with no existing web-UI equivalent to match. `files` likewise
+ * `appIcon` is the logo, supplied by the platform (each has its own way to
+ * load a bitmap resource); it's shown large on the server-connect screen
+ * and small at the left of the vault header. `files` likewise
  * comes from the platform and enables CSV import/export when present, and
  * `sessionStore` lets the app remember its server and session across
  * launches (see AppState.restoreSession).
  */
 @Composable
 fun RatatoskrApp(
-    appIcon: (@Composable () -> Unit)? = null,
+    appIcon: Painter? = null,
     files: PlatformFiles? = null,
     sessionStore: SessionStore? = null,
 ) {
@@ -79,6 +80,7 @@ fun RatatoskrApp(
                     appState = appState,
                     onNewEntry = { showNewEntryDialog = true },
                     onEditEntry = { editingEntry = it },
+                    appIcon = appIcon,
                     onOpenGenerator = {
                         generatorTarget = null
                         showGeneratorDialog = true

@@ -1,5 +1,6 @@
 package com.ratatoskr.shared.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +27,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ratatoskr.shared.api.EntryOut
@@ -37,7 +41,8 @@ import kotlinx.coroutines.launch
  * #app-screen in static/index.html. Sharing and the admin users panel are
  * intentionally not here yet -- deferred fast-follows per the client dev
  * plan, not an oversight. `onExport`/`onImport` are null when the platform
- * has no file picker wired up yet, which hides those buttons. */
+ * has no file picker wired up yet, which hides those buttons. `appIcon` is
+ * the logo shown at the header's left, like the web UI's brand mark. */
 @Composable
 fun VaultScreen(
     appState: AppState,
@@ -46,6 +51,7 @@ fun VaultScreen(
     onOpenGenerator: () -> Unit,
     onExport: (() -> Unit)? = null,
     onImport: (() -> Unit)? = null,
+    appIcon: Painter? = null,
 ) {
     var query by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
@@ -74,6 +80,16 @@ fun VaultScreen(
                     ) {
                         Text(appState.role, style = MaterialTheme.typography.labelSmall, color = RatatoskrColors.Verdigris)
                     }
+                }
+                appIcon?.let {
+                    Image(
+                        painter = it,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(end = 10.dp)
+                            .size(if (compact) 40.dp else 32.dp)
+                            .clip(RoundedCornerShape(6.dp)),
+                    )
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
