@@ -13,7 +13,9 @@ version: ${RATATOSKR_VERSION}
 release: 1
 section: utils
 priority: optional
-maintainer: Ben Curtis <curtis04ben@gmail.com>
+# Debian requires "Name <email>" here; GitHub's no-reply address keeps a
+# personal email out of the packages.
+maintainer: Ben Curtis <curtis04ben@users.noreply.github.com>
 vendor: Ratatoskr
 homepage: https://github.com/curtis04ben/Ratatoskr
 license: LicenseRef-Unspecified
