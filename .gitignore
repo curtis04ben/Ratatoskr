@@ -1,4 +1,17 @@
-__pycache__/
-*.pyc
-.venv/
-data/
+# Gradle
+clients/**/.gradle/
+clients/**/build/
+clients/.gradle/
+clients/build/
+clients/.kotlin/
+!clients/**/src/**/build/
+
+# Kotlin/Compose
+clients/**/*.class
+clients/**/*.hprof
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
