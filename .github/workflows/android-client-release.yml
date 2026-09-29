@@ -68,13 +68,35 @@ jobs:
             exit 0
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          # Fail here, clearly, rather than deep inside Gradle.
+          if ! keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass "$RATATOSKR_KEYSTORE_PASSWORD" \
+               -alias "$RATATOSKR_KEY_ALIAS" >/dev/null 2>&1; then
+            echo "::error::Keystore check failed: RATATOSKR_KEYSTORE_BASE64 isn't a valid keystore, or RATATOSKR_KEYSTORE_PASSWORD / RATATOSKR_KEY_ALIAS don't match it"
+            exit 1
+          fi
           echo "RATATOSKR_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
+      - name: Install Android SDK platform
+        # The runner's preinstalled SDK may not have the compileSdk platform yet.
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;36.0.0" > /dev/null
+
+      # Both Gradle steps copy Gradle's "What went wrong" section into an
+      # error annotation, so a failure's cause shows on the run summary.
       - name: Test
-        run: ./gradlew --no-daemon :shared:jvmTest
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :shared:jvmTest 2>&1 | tee "$RUNNER_TEMP/test.log" || {
+            echo "::error title=Tests failed::$(sed -n '/What went wrong/,/\* Try/p' "$RUNNER_TEMP/test.log" | head -25 | tr '\n' ' ')"
+            exit 1
+          }
 
       - name: Build APK
-        run: ./gradlew --no-daemon :android:assembleRelease
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :android:assembleRelease 2>&1 | tee "$RUNNER_TEMP/build.log" || {
+            echo "::error title=APK build failed::$(sed -n '/What went wrong/,/\* Try/p' "$RUNNER_TEMP/build.log" | head -25 | tr '\n' ' ')"
+            exit 1
+          }
 
       - name: Collect APK
         env:
