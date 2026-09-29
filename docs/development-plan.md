@@ -14,9 +14,11 @@ Ratatoskr/
 ├── server/          Python/FastAPI backend + web UI (the original project)
 ├── clients/         Kotlin Multiplatform + Compose Multiplatform monorepo
 │   ├── shared/       portable API client, models, TOTP, app state, UI screens
-│   └── desktop/       JVM/Compose Desktop entry point — builds Linux, Windows, AND macOS
+│   ├── desktop/      JVM/Compose Desktop entry point — builds Linux, Windows, AND macOS
+│   └── android/      Android app module (AGP 9 requires it separate from shared/)
 ├── shared/assets/    master branding (logo SVG) that every client/platform icon derives from
-└── docs/             this file, plus anything else durable
+├── docs/             this file, plus anything else durable
+└── .github/workflows/  tag-triggered release builds (linux-v*, android-v*)
 ```
 
 **Monorepo, not polyrepo.** Chosen specifically because development happens
@@ -27,8 +29,11 @@ description. Revisit only if a specific client's build tooling genuinely
 conflicts with the others (CI minutes, SDK bloat) — not preemptively.
 
 **Independent versioning per component**, not one repo-wide tag. The
-server is mature; a first client starts at 0.1.0. Tag as `server-vX.Y.Z`,
-`linux-vX.Y.Z`, etc.
+server is mature; a first client starts at 0.1.0. Tags in use:
+`linux-vX.Y.Z` and `android-vX.Y.Z`, each producing its own GitHub Release
+(versions in `clients/gradle.properties`). The server is still deployed
+from source; a `server-vX.Y.Z` tag would follow the same pattern if it
+ever gets released builds (e.g. a published Docker image).
 
 **`server/` nesting** happened together with adding `clients/`, not before
 — moving it earlier would have broken every already-documented deployment
@@ -109,7 +114,7 @@ decision — not something to back into via a client architecture choice.
   a browser-only enforcement mechanism. Nothing to add there for native
   clients specifically.
 
-### Phase 2 — Linux (in progress)
+### Phase 2 — Linux (released; open items below)
 
 MVP scope, deliberately smaller than full web-UI parity:
 
@@ -142,7 +147,7 @@ skipped because its generated `.desktop` file can't carry the app ID or
 `StartupWMClass`. Pushing a `linux-vX.Y.Z` tag publishes a GitHub Release
 via `.github/workflows/linux-client-release.yml`. Details: `clients/README.md`.
 
-### Phase 3 — Android (in progress)
+### Phase 3 — Android (released; Autofill is Phase 3.x)
 
 Mostly reuse: `clients/shared`'s screens carry over directly. `:shared`
 gained an Android target (AGP's KMP library plugin, OkHttp engine) and
@@ -218,23 +223,21 @@ iOS" isn't measured against the same yardstick as the other four.
 
 ## Testing note for whoever picks this up next
 
-The Kotlin code in `clients/` was written without access to a Kotlin
-compiler or network access to fetch Gradle/Maven dependencies (the
-environment it was written in had neither). It was checked as rigorously
-as static analysis allows without a real compiler:
+The client code was first written without a Kotlin compiler available and
+checked by static analysis only, including verifying `Totp.kt` against the
+RFC 6238 test vectors via a Python transliteration. It has since been
+built for real and is exercised by CI on every release:
 
-- Every hand-substituted 32-bit hex constant in `Totp.kt` was verified
-  arithmetically against its correct two's-complement value.
-- `Totp.kt`'s full algorithm was transliterated into Python (with 32-bit
-  masking to match Kotlin `Int` semantics) and run against the official
-  RFC 6238 test vectors — genuine logic verification, not just careful
-  transcription.
-- Every file was checked for brace/paren balance, package-vs-directory
-  consistency, and unused imports.
-- Every `com.ratatoskr.*` cross-file import was checked against an actual
-  matching declaration somewhere in the project.
+- `./gradlew :shared:jvmTest` runs the unit tests, including the TOTP test
+  vectors; both release workflows run it before building anything.
+- The Linux packages were installed and run on Fedora KDE (launcher entry,
+  icon, window matching).
+- The Android app was tested on a real phone (Galaxy A55, Android 16)
+  against a scratch server: setup, creating an entry, repeated
+  kill-and-relaunch session restores, and Lock. The Android emulator
+  crashed on the development machine's kernel at the time, so real-device
+  testing over `adb` is the proven route; see `clients/README.md` for the
+  local-server setup.
 
-None of that is a substitute for `./gradlew build` actually succeeding.
-Run that — and `./gradlew :shared:test` for the TOTP test vectors
-specifically — before assuming any of this compiles, let alone runs
-correctly end-to-end against a real server.
+Not yet exercised on a device: the entry editor's live 2FA code, and CSV
+import/export through Android's file picker.

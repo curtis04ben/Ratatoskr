@@ -1,25 +1,25 @@
-# Ratatoskr
+# Ratatoskr server
 
-A self-hosted, multi-user password manager. FastAPI backend, zero external
-JS dependencies on the frontend, single SQLite file for storage, built to
-run as one Docker container on TrueNAS, CasaOS, or plain Docker.
+The server for Ratatoskr, a self-hosted, multi-user password manager.
+FastAPI backend, zero external JS dependencies on the web UI, single SQLite
+file for storage, built to run as one Docker container on TrueNAS, CasaOS,
+or plain Docker.
 
 Named for the squirrel who runs up and down Yggdrasil carrying messages
 between the eagle at its crown and the serpent at its roots — a fitting
 namesake for something that moves your credentials exactly where they need
 to go, and nowhere else.
 
-> This is the server component of the larger Ratatoskr project, which also
-> includes native clients under `../clients/`. See
+> This is the server component of the larger Ratatoskr project. It stores
+> the vault, does the cryptography, and serves the **web UI**. The native
+> **Linux** and **Android** apps (in [`../clients/`](../clients/),
+> downloadable from the
+> [Releases page](https://github.com/curtis04ben/Ratatoskr/releases)) are
+> clients of this server's REST API; Windows and macOS are in the works,
+> and iOS and a browser extension are planned. See the
+> [project README](../README.md) for the overview and
 > [`../docs/development-plan.md`](../docs/development-plan.md) for the
-> full multi-client architecture and build plan.
-
-> **Status: work in progress.** This is a working web app you can run
-> today, but it's a young project. Right now it exists as a **web UI only**.
-> A **browser extension** is planned next; **native mobile/desktop apps**
-> are in early, unstarted design. Everything the eventual extension and
-> apps will need already exists as a plain REST API (see below), so adding
-> them won't require backend changes — just new clients.
+> multi-client architecture.
 
 ## How multi-user security works
 
@@ -252,13 +252,16 @@ targets. The hand-written implementation (`static/totp.js`) is checked
 against the official RFC 6238 test vectors and cross-verified against an
 independent Python implementation for correctness.
 
+The native apps do the same: they share one pure-Kotlin implementation
+(`clients/shared/.../totp/Totp.kt`), checked against the same RFC 6238
+test vectors, so codes tick over every second offline there too.
+
 There's also a server-side endpoint, `GET /api/v1/vault/{id}/totp`, that
 computes the same code using the identical algorithm in Python
-(`app/crypto.py`). The web UI doesn't use it — computing locally means the
-code can tick over every second with no network round trip — but it exists
-specifically so a future browser extension or native app can just call it
-rather than reimplementing HMAC-SHA1/TOTP in Swift, Kotlin, or wherever
-else it ends up being written.
+(`app/crypto.py`). None of the current interfaces use it — computing
+locally means no network round trip per code — but it's there for thin
+clients, such as a future browser extension, that would rather not
+implement TOTP themselves.
 
 Sharing an entry that has 2FA configured shares the code along with the
 password, using the same per-recipient sealing as everything else — a
@@ -276,9 +279,10 @@ that code plus their own chosen master password at the lock screen's
 **"Have an invite code?"** link — the admin never sees or sets their
 password.
 
-## API, for the eventual extension and native apps
+## API
 
-Everything the web UI does goes through a plain REST API at `/api/v1`:
+Everything the web UI and the native apps do goes through a plain REST API
+at `/api/v1`:
 
 - `GET  /api/v1/auth/status` — is a vault set up yet
 - `POST /api/v1/auth/setup` — first-run: create the admin account
@@ -317,9 +321,13 @@ RATATOSKR_DATA_DIR=./data uvicorn app.main:app --reload
 
 ## Known limitations / roadmap
 
-- **Web UI only, today.** Browser extension is the next planned client;
-  native mobile/desktop apps are unstarted. The API is already
-  extension/app-ready (see above).
+- **Clients:** web UI, plus native Linux and Android apps. Windows and
+  macOS are in the works; iOS and a browser extension are planned. The
+  native apps don't yet have sharing, the admin **Users** panel or the
+  factory reset — use the web UI for those.
+- **No change-password screen.** Changing a master password works through
+  the API (`POST /api/v1/auth/change-password`), but neither the web UI nor
+  the apps expose it yet.
 - No individual "forgot my password" recovery — see "If nobody can log
   in" above for the current trade-off and why.
 - No attachments, no folders/tags — entries are site, username, password,

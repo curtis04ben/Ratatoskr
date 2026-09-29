@@ -5,6 +5,12 @@ client, models and every screen; `desktop/` is the desktop entry point and
 packaging; `android/` is the Android app. Architecture and phase plan:
 [`docs/development-plan.md`](../docs/development-plan.md).
 
+**Status:** the Linux desktop app and the Android app are released
+(GitHub Releases, tags `linux-v*` and `android-v*`). Windows and macOS come
+from the same `desktop/` module and need only packaging and platform glue;
+iOS is planned. What the apps can and can't do yet is summarised in the
+[project README](../README.md#what-the-apps-dont-do-yet).
+
 Needs JDK 21. On Fedora, packaging also needs `java-21-openjdk-jmods`
 (jlink can't build the bundled runtime without it); Temurin JDKs include it.
 
@@ -25,6 +31,23 @@ Users only ever deal with the last two.
 ```
 
 `LiveServerTest` only runs when `RATATOSKR_TEST_SERVER` points at a real server.
+
+### Trying changes against a throwaway server
+
+Run a scratch server with its own data directory, from the virtualenv set
+up in the server README's "Local development" section (lower Argon2 memory
+makes unlocking quicker on a dev machine):
+
+```bash
+cd ../server
+RATATOSKR_DATA_DIR=/tmp/ratatoskr-test RATATOSKR_ARGON2_MEMORY_KIB=65536 \
+    uvicorn app.main:app --host 127.0.0.1 --port 8765
+```
+
+The desktop app connects to `127.0.0.1:8765` directly. For an Android
+phone plugged in over USB (with USB debugging on), `adb reverse tcp:8765
+tcp:8765` makes the same address work on the phone, without exposing the
+server on your network.
 
 ## Linux packaging
 
@@ -67,6 +90,12 @@ embedded in the AppImage):
 Install layout: the app in `/opt/ratatoskr/`, `/usr/bin/ratatoskr` a
 symlink to its launcher.
 
+The desktop app doesn't remember anything between launches yet: you enter
+the server address and master password each time. Persisting the session
+needs an encrypted store, which on Linux means libsecret (the system
+keyring) — the desktop counterpart of Android's `KeystoreSessionStore`,
+plugged into the same shared `SessionStore` interface.
+
 ## Versioning and releases
 
 The desktop version lives in one place: `ratatoskrDesktopVersion` in
@@ -78,14 +107,14 @@ each component gets its own GitHub Release with only its own files:
 
 ```bash
 # 1. bump ratatoskrDesktopVersion in clients/gradle.properties, commit, push
-# 2. tag that commit
-git tag linux-v0.1.1
-git push origin linux-v0.1.1
+# 2. tag that commit with the same version
+git tag linux-vX.Y.Z
+git push origin linux-vX.Y.Z
 ```
 
 The tag triggers `.github/workflows/linux-client-release.yml`, which runs
 the tests, builds all three packages, and publishes them with a
-`SHA256SUMS` file as the release "Ratatoskr Linux client v0.1.1". It
+`SHA256SUMS` file as the release "Ratatoskr Linux client vX.Y.Z". It
 refuses to release if the tag doesn't match `ratatoskrDesktopVersion`.
 Running the workflow manually from the Actions tab builds the packages as
 a workflow artifact without releasing anything.
@@ -159,11 +188,17 @@ Versioned separately as `ratatoskrAndroidVersion` in `gradle.properties`;
 increases. Bump, commit, push, then:
 
 ```bash
-git tag android-v0.1.1
-git push origin android-v0.1.1
+git tag android-vX.Y.Z
+git push origin android-vX.Y.Z
 ```
 
 `.github/workflows/android-client-release.yml` tests, builds and signs the
 APK, and publishes `Ratatoskr-<version>.apk` + `SHA256SUMS` as the release
-"Ratatoskr Android v0.1.1", with install steps and the signing
+"Ratatoskr Android vX.Y.Z", with install steps and the signing
 certificate's fingerprint in the notes. It won't release unsigned.
+
+Before building, it checks the signing secrets against the keystore and
+fails with a message naming the one that's wrong (including a checksum of
+the decoded keystore to compare with `sha256sum ~/ratatoskr-release.jks`).
+Any Gradle failure's "What went wrong" text is copied onto the run's
+summary page, so you don't need to dig through the log.
