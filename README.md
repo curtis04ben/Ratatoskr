@@ -37,6 +37,9 @@ hosted service and no account with anyone else — see
   editable, and revoke it later.
 - **Invite-only sign-up.** An admin creates a one-time invite code; the
   invitee picks their own master password, which the admin never sees.
+- **Change your master password** from any of the apps or the web UI.
+  Your entries and shares are untouched, and every other device you're
+  signed in on is signed out.
 - **Two-factor codes.** Any entry can hold a TOTP secret and shows the live
   6-digit code with a countdown, so the vault doubles as your authenticator.
 - **Password generator**, and **CSV import/export** that understands
@@ -117,16 +120,15 @@ packaging work on the existing desktop app rather than new apps.
 
 The Linux and Android apps cover everyday use: unlocking, searching,
 viewing, adding, editing and deleting entries, 2FA codes, the password
-generator and CSV import/export. A few things still need the web UI:
+generator, CSV import/export and changing your master password. They
+remember your server after the first time, so later launches only ask for
+your username and master password (**Change server** on that screen
+switches to another one). A few things still need the web UI:
 
 - sharing entries with other people;
 - the admin **Users** panel (creating invites, changing roles, removing
   accounts);
 - the "no admin can log in" factory reset.
-
-Changing your master password is currently possible only through the API
-(`POST /api/v1/auth/change-password`); none of the interfaces have a
-screen for it yet.
 
 ## Repository structure
 
@@ -148,7 +150,7 @@ docs/                 Architecture and per-platform development plan
 Each part of Ratatoskr is versioned on its own, so updating one never
 forces a download of another:
 
-- **Server** — currently 2.3.0 (see the version history in
+- **Server** — currently 2.4.0 (see the version history in
   [`server/README.md`](server/README.md#version-history)); deployed from
   source with Docker.
 - **Linux app** — tags `linux-vX.Y.Z`, each a separate GitHub Release.

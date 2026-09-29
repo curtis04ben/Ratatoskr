@@ -17,8 +17,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ratatoskr.shared.api.EntryOut
@@ -49,6 +54,7 @@ fun VaultScreen(
     onNewEntry: () -> Unit,
     onEditEntry: (EntryOut) -> Unit,
     onOpenGenerator: () -> Unit,
+    onChangePassword: () -> Unit,
     onExport: (() -> Unit)? = null,
     onImport: (() -> Unit)? = null,
     appIcon: Painter? = null,
@@ -101,9 +107,15 @@ fun VaultScreen(
                 }
                 if (appState.role.isNotBlank()) {
                     if (!compact) roleBadge()
-                    Row(modifier = Modifier.padding(start = 12.dp)) {
-                        GhostButton("Generate", onClick = onOpenGenerator)
-                        GhostButton("Lock", onClick = { scope.launch { appState.lock() } }, modifier = Modifier.padding(start = 8.dp))
+                    Row(modifier = Modifier.padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        // No room for Generate beside Lock on a phone; it
+                        // moves into the menu there.
+                        if (!compact) GhostButton("Generate", onClick = onOpenGenerator, modifier = Modifier.padding(end = 8.dp))
+                        GhostButton("Lock", onClick = { scope.launch { appState.lock() } })
+                        AccountMenu(
+                            onGenerate = onOpenGenerator.takeIf { compact },
+                            onChangePassword = onChangePassword,
+                        )
                     }
                 }
             }
@@ -171,6 +183,35 @@ fun VaultScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/** The header's "⋮" menu: account actions that don't need a permanent
+ * button. `onGenerate` is non-null only on narrow screens, where Generate
+ * has no room in the header itself. */
+@Composable
+private fun AccountMenu(onGenerate: (() -> Unit)?, onChangePassword: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = { expanded = true }, modifier = Modifier.semantics { contentDescription = "More options" }) {
+            Text("⋮", style = MaterialTheme.typography.titleLarge, color = RatatoskrColors.Text)
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            containerColor = RatatoskrColors.Panel,
+        ) {
+            onGenerate?.let {
+                DropdownMenuItem(
+                    text = { Text("Generate a password", color = RatatoskrColors.Text) },
+                    onClick = { expanded = false; it() },
+                )
+            }
+            DropdownMenuItem(
+                text = { Text("Change master password", color = RatatoskrColors.Text) },
+                onClick = { expanded = false; onChangePassword() },
+            )
         }
     }
 }

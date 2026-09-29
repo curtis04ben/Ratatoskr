@@ -38,7 +38,11 @@ sealed class Screen {
  * session token across launches -- see restoreSession().
  */
 class AppState(private val sessionStore: SessionStore? = null) {
-    var screen by mutableStateOf<Screen>(Screen.ServerConnect)
+    // With a saved server, start on the "connecting" screen rather than
+    // flashing the server-address form while restoreSession() runs.
+    var screen by mutableStateOf<Screen>(
+        if (sessionStore?.load() != null) Screen.CheckingServer else Screen.ServerConnect
+    )
         private set
 
     var serverUrl by mutableStateOf("")
@@ -86,17 +90,22 @@ class AppState(private val sessionStore: SessionStore? = null) {
     }
 
     /** Called once at launch: reconnects to the saved server and, if a
-     * saved token is still accepted, goes straight to the vault. An expired
-     * or revoked token lands on Unlock for the same server; an unreachable
-     * server lands on the connect screen with the address filled in. */
+     * saved token is still accepted, goes straight to the vault. Otherwise
+     * it lands on Unlock for the same server -- including when the server
+     * can't be reached right now, so the user only ever re-enters their
+     * credentials (unlocking retries the connection). The server-address
+     * screen only appears via "Change server". */
     suspend fun restoreSession() {
         val store = sessionStore ?: return
         val saved = store.load() ?: return
         screen = Screen.CheckingServer
+        serverUrl = saved.serverUrl // for the "Connecting to ..." screen
         connectToServer(saved.serverUrl)
         if (client == null) {
-            serverUrl = saved.serverUrl // prefills the connect screen
-            screen = Screen.ServerConnect
+            // Unreachable: keep connectToServer's error message showing.
+            client = RatatoskrApiClient(saved.serverUrl)
+            serverUrl = saved.serverUrl
+            screen = Screen.Unlock
             return
         }
         // connectToServer saved the server with no token; put the saved
@@ -170,6 +179,22 @@ class AppState(private val sessionStore: SessionStore? = null) {
         } finally {
             isLoading = false
         }
+    }
+
+    /** Changes the signed-in account's master password. The server signs
+     * out every other session for this account and returns a new token for
+     * this one, which replaces the old (now revoked) token here and in the
+     * SessionStore. Returns null on success, or the error to show. */
+    suspend fun changePassword(currentPassword: String, newPassword: String): String? = try {
+        val response = requireClient().changePassword(currentPassword, newPassword)
+        requireClient().token = response.token
+        sessionStore?.save(SavedSession(serverUrl, response.token))
+        notice = "Master password changed"
+        null
+    } catch (e: RatatoskrApiException) {
+        e.detail
+    } catch (e: RatatoskrConnectionException) {
+        e.message
     }
 
     suspend fun loadEntries() {

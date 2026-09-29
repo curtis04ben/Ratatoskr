@@ -48,6 +48,12 @@ underlying X25519 keypair is unchanged, so every seal anyone has ever made
 to your public key — your own entries, things shared with you, admin
 recovery access — stays valid without re-sharing anything.
 
+To change it, use **Change password** in the web UI's header (or
+**⋮ → Change master password** in the Linux and Android apps). It asks for
+your current password, and on success signs you out everywhere else: every
+other session for your account is ended, and only the device you changed
+it on stays signed in.
+
 ### Roles
 
 | Role | Can see | Can write | Notes |
@@ -325,9 +331,6 @@ RATATOSKR_DATA_DIR=./data uvicorn app.main:app --reload
   macOS are in the works; iOS and a browser extension are planned. The
   native apps don't yet have sharing, the admin **Users** panel or the
   factory reset — use the web UI for those.
-- **No change-password screen.** Changing a master password works through
-  the API (`POST /api/v1/auth/change-password`), but neither the web UI nor
-  the apps expose it yet.
 - No individual "forgot my password" recovery — see "If nobody can log
   in" above for the current trade-off and why.
 - No attachments, no folders/tags — entries are site, username, password,
@@ -346,6 +349,12 @@ RATATOSKR_DATA_DIR=./data uvicorn app.main:app --reload
 
 ## Version history
 
+- **2.4.0** — **Change password** in the web UI's header: current password
+  plus a confirmed new one, using the existing change-password API, which
+  signs out every other session for the account. A wrong current password
+  now shows an error in the dialog instead of being treated as an expired
+  session. The header's buttons wrap on narrow (phone-width) screens
+  rather than running off the edge.
 - **2.3.0** — Firefox CSV export support (site name derived from URL,
   since Firefox's export has no site column), clearer distinction between
   malformed/unsupported/invalid-row import errors. Docker deployments no

@@ -12,9 +12,10 @@ class SavedSession(val serverUrl: String, val token: String?)
  * applies -- a restored token that has expired just lands on Unlock.
  *
  * Implementations must store the token encrypted (Android: a Keystore
- * key). The master password is never passed here. Supplied by each
- * platform's entry point, like PlatformFiles; without one (desktop, for
- * now -- libsecret is still to come) nothing persists.
+ * key) or not at all -- the desktop store keeps only the server address
+ * until it has the system keyring to put the token in. The master
+ * password is never passed here. Supplied by each platform's entry point,
+ * like PlatformFiles; without one, nothing persists.
  */
 interface SessionStore {
     fun load(): SavedSession?

@@ -90,11 +90,14 @@ embedded in the AppImage):
 Install layout: the app in `/opt/ratatoskr/`, `/usr/bin/ratatoskr` a
 symlink to its launcher.
 
-The desktop app doesn't remember anything between launches yet: you enter
-the server address and master password each time. Persisting the session
-needs an encrypted store, which on Linux means libsecret (the system
-keyring) — the desktop counterpart of Android's `KeystoreSessionStore`,
-plugged into the same shared `SessionStore` interface.
+The desktop app remembers the last server (`DesktopSessionStore`, a
+one-line `settings.properties` in `~/.config/ratatoskr/`, `%APPDATA%\Ratatoskr`
+or `~/Library/Application Support/Ratatoskr`), so it opens on Unlock for
+that server. It deliberately never writes the session token: keeping you
+signed in across launches needs an encrypted store, which on Linux means
+libsecret (the system keyring) — the desktop counterpart of Android's
+`KeystoreSessionStore`, plugged into the same shared `SessionStore`
+interface. Until then, the master password is asked for on each launch.
 
 ## Versioning and releases
 

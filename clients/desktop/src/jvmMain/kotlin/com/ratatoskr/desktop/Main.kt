@@ -49,9 +49,11 @@ fun main() = application {
         // Below this the toolbar buttons squeeze the search field unusably.
         LaunchedEffect(Unit) { window.minimumSize = Dimension(640, 520) }
         val files = remember { DesktopFiles(window) }
+        val sessionStore = remember { DesktopSessionStore() }
         RatatoskrApp(
             files = files,
             appIcon = iconPainter,
+            sessionStore = sessionStore,
         )
     }
 }

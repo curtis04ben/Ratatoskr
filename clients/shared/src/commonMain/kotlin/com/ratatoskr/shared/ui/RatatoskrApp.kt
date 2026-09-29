@@ -52,6 +52,7 @@ fun RatatoskrApp(
     var showGeneratorDialog by remember { mutableStateOf(false) }
     var generatorTarget by remember { mutableStateOf<((String) -> Unit)?>(null) }
     var showExportDialog by remember { mutableStateOf(false) }
+    var showChangePasswordDialog by remember { mutableStateOf(false) }
     var importFile by remember { mutableStateOf<PickedFile?>(null) }
     var importErrors by remember { mutableStateOf<List<String>>(emptyList()) }
     val scope = rememberCoroutineScope()
@@ -69,8 +70,8 @@ fun RatatoskrApp(
     RatatoskrTheme {
         androidx.compose.material3.Surface(modifier = Modifier.fillMaxSize().background(RatatoskrColors.Bg)) {
             when (appState.screen) {
-                Screen.ServerConnect, Screen.CheckingServer ->
-                    ServerConnectScreen(appState, appIcon)
+                Screen.ServerConnect -> ServerConnectScreen(appState, appIcon)
+                Screen.CheckingServer -> ConnectingScreen(appState)
 
                 Screen.Setup -> SetupScreen(appState)
                 Screen.Unlock -> UnlockScreen(appState)
@@ -85,6 +86,7 @@ fun RatatoskrApp(
                         generatorTarget = null
                         showGeneratorDialog = true
                     },
+                    onChangePassword = { showChangePasswordDialog = true },
                     onExport = files?.let { { showExportDialog = true } },
                     onImport = files?.let { platformFiles ->
                         {
@@ -142,6 +144,10 @@ fun RatatoskrApp(
                         showGeneratorDialog = true
                     },
                 )
+            }
+
+            if (showChangePasswordDialog) {
+                ChangePasswordDialog(appState, onDismiss = { showChangePasswordDialog = false })
             }
 
             if (showGeneratorDialog) {

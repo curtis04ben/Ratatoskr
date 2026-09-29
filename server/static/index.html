@@ -265,6 +265,7 @@
     <div class="header-actions">
       <button id="open-users" class="btn-ghost hidden">Users</button>
       <button id="open-generator" class="btn-ghost">Generate</button>
+      <button id="open-password" class="btn-ghost">Change password</button>
       <button id="lock-btn" class="btn-ghost">Lock</button>
     </div>
   </header>
@@ -445,6 +446,31 @@
       <button type="button" id="generator-regenerate" class="btn-primary">Regenerate</button>
     </div>
     <p class="error" id="generator-error"></p>
+  </div>
+</div>
+
+<!-- ============ CHANGE PASSWORD MODAL ============ -->
+<div id="password-modal" class="modal hidden">
+  <div class="modal-card">
+    <h2>Change master password</h2>
+    <p class="form-lede">
+      Your entries and shares stay as they are. Changing it signs you out on your other devices,
+      and there's still no reset link, so keep the new one somewhere safe.
+    </p>
+    <form id="password-form" autocomplete="off">
+      <label for="password-current">Current master password</label>
+      <input id="password-current" type="password" required autocomplete="current-password">
+      <label for="password-new">New master password</label>
+      <input id="password-new" type="password" minlength="8" required autocomplete="new-password">
+      <label for="password-confirm">Confirm new master password</label>
+      <input id="password-confirm" type="password" minlength="8" required autocomplete="new-password">
+      <div class="modal-actions">
+        <div class="spacer"></div>
+        <button type="button" id="password-cancel-btn" class="btn-ghost">Cancel</button>
+        <button type="submit" id="password-submit-btn" class="btn-primary">Change password</button>
+      </div>
+      <p class="error" id="password-error"></p>
+    </form>
   </div>
 </div>
 

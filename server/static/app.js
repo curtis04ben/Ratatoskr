@@ -24,7 +24,9 @@
     toast._t = setTimeout(() => hide(el), 2400);
   }
 
-  async function api(path, { method = "GET", body, auth = true } = {}) {
+  // `expireOn401: false` is for calls where a 401 means "wrong password",
+  // not "session expired" (change-password), so it shouldn't log you out.
+  async function api(path, { method = "GET", body, auth = true, expireOn401 = true } = {}) {
     const headers = { "Content-Type": "application/json" };
     if (auth && state.token) headers["Authorization"] = `Bearer ${state.token}`;
     const res = await fetch(API + path, {
@@ -32,7 +34,7 @@
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-    if (res.status === 401) {
+    if (res.status === 401 && expireOn401) {
       clearSession();
       showLockScreen();
       throw new Error("Session expired, unlock again");
@@ -172,6 +174,48 @@
     try { await api("/auth/lock", { method: "POST" }); } catch { /* ignore */ }
     clearSession();
     location.reload();
+  });
+
+  // ---------- change master password ----------
+  // The server re-wraps this account's private key under the new password
+  // (entries and shares are untouched), signs out every other session for
+  // the account, and returns a fresh token for this one -- which has to
+  // replace ours, since the old one is revoked along with the rest.
+  $("open-password").addEventListener("click", () => {
+    $("password-form").reset();
+    $("password-error").textContent = "";
+    show($("password-modal"));
+    $("password-current").focus();
+  });
+  $("password-cancel-btn").addEventListener("click", () => hide($("password-modal")));
+
+  $("password-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const current = $("password-current").value;
+    const next = $("password-new").value;
+    const errEl = $("password-error");
+    errEl.textContent = "";
+    if (next !== $("password-confirm").value) { errEl.textContent = "The new passwords don't match."; return; }
+    if (next === current) { errEl.textContent = "The new password is the same as the current one."; return; }
+
+    const submit = $("password-submit-btn");
+    submit.disabled = true;
+    submit.textContent = "Changing…"; // two Argon2id derivations: a few seconds is normal
+    try {
+      const r = await api("/auth/change-password", {
+        method: "POST",
+        body: { current_password: current, new_password: next },
+        expireOn401: false,
+      });
+      setSession(r.token, r.username, r.role);
+      hide($("password-modal"));
+      toast("Master password changed");
+    } catch (err) {
+      errEl.textContent = err.message;
+    } finally {
+      submit.disabled = false;
+      submit.textContent = "Change password";
+    }
   });
 
   // ---------- entry list ----------

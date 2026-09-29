@@ -6,7 +6,7 @@ from app.config import EXTRA_CORS_ORIGINS
 from app.database import init_db
 from app.routers import auth, generator, users, vault
 
-app = FastAPI(title="Ratatoskr", version="2.3.0")
+app = FastAPI(title="Ratatoskr", version="2.4.0")
 
 init_db()
 

@@ -87,6 +87,9 @@ fun SetupScreen(appState: AppState) {
             )
         }
         ErrorText(localError ?: appState.errorMessage, modifier = Modifier.fillMaxWidth())
+
+        // In case this isn't the server they meant to set up.
+        LinkButton("Change server", onClick = { appState.changeServer() }, modifier = Modifier.padding(top = 8.dp))
     }
 }
 
@@ -97,6 +100,14 @@ fun UnlockScreen(appState: AppState) {
     val scope = rememberCoroutineScope()
 
     AuthScreenShell(title = "Ratatoskr") {
+        // The saved server, so it's clear where these credentials go
+        // without re-asking for the address on every launch.
+        Text(
+            displayServer(appState.serverUrl),
+            style = MaterialTheme.typography.bodySmall,
+            color = RatatoskrColors.TextMuted,
+            modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+        )
         RatatoskrTextField(username, { username = it }, "Username", Modifier.fillMaxWidth())
         RatatoskrTextField(password, { password = it }, "Master password", Modifier.fillMaxWidth().padding(top = 10.dp), isPassword = true)
 
@@ -113,7 +124,27 @@ fun UnlockScreen(appState: AppState) {
         ErrorText(appState.errorMessage, modifier = Modifier.fillMaxWidth())
 
         LinkButton("Have an invite code?", onClick = { appState.showAcceptInvite() }, modifier = Modifier.padding(top = 8.dp))
-        LinkButton("Change server", onClick = { appState.changeServer() })
+        GhostButton("Change server", onClick = { appState.changeServer() }, modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+/** A server URL as people think of it: "host:port", without the scheme.
+ * The scheme is still shown when it's https, as reassurance. */
+internal fun displayServer(url: String): String =
+    if (url.startsWith("https://")) url else url.removePrefix("http://")
+
+/** Shown at launch while reconnecting to the saved server
+ * (AppState.restoreSession), in place of the server-address form. */
+@Composable
+fun ConnectingScreen(appState: AppState) {
+    AuthScreenShell(title = "Ratatoskr") {
+        CircularProgressIndicator(color = RatatoskrColors.Brass, modifier = Modifier.padding(16.dp))
+        Text(
+            if (appState.serverUrl.isEmpty()) "Connecting…"
+            else "Connecting to ${displayServer(appState.serverUrl)}…",
+            style = MaterialTheme.typography.bodySmall,
+            color = RatatoskrColors.TextMuted,
+        )
     }
 }
 
