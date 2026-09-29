@@ -101,6 +101,12 @@ interface. Until then, the master password is asked for on each launch.
 
 ## Versioning and releases
 
+> **Planned change:** all clients (Linux, Windows, macOS, Android) will
+> move to one combined `vX.Y.Z` release with a single shared version,
+> starting at 1.0.0. The design is in the "Release plan" section of
+> [`docs/development-plan.md`](../docs/development-plan.md#release-plan-one-combined-release-decided).
+> What follows describes the current separate `linux-v*`/`android-v*` releases.
+
 The desktop version lives in one place: `ratatoskrDesktopVersion` in
 `gradle.properties`. Gradle's `packageVersion` and the package filenames
 all read it.

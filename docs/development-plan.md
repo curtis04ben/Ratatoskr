@@ -17,12 +17,50 @@ each time.
 | Linux app | 0.1.3 | `linux-v0.1.3` | `ratatoskrDesktopVersion` in `clients/gradle.properties` |
 | Android app | 0.1.2 | `android-v0.1.2` | `ratatoskrAndroidVersion`; release key + 4 GitHub secrets in place |
 | Windows / macOS | — | — | Phases 4/5 below: packaging on the same `desktop/` module |
-| Android Autofill | — | — | Phase 3.x below |
+| Android biometric unlock | — | — | Phase 3.1 below |
+| Android Autofill | — | — | Phase 3.2 below |
 
 Both native apps cover: connect (server remembered), setup, unlock,
 accept-invite, entry list/search/create/edit/delete, live TOTP, password
 generator, CSV import/export, change master password, lock. Not in the
 apps yet (web UI only): sharing, the admin Users panel, factory reset.
+
+**Decisions already made by the project owner** (don't re-ask; revisit
+only if something makes one unworkable, and say so):
+
+- **One combined release for every app.** A single `vX.Y.Z` tag builds
+  Linux (`.rpm`, `.deb`, AppImage), Windows (`.exe`), macOS (`.pkg`) and
+  Android (`.apk`) into one GitHub Release, with **one shared version
+  number** for all clients. This replaces the separate `linux-v*` /
+  `android-v*` releases. See "Release plan" below.
+- **macOS: Apple silicon (arm64) only.** Intel Macs are out of scope
+  (Apple no longer supports them). The owner has both kinds of Mac for
+  testing but develops and tests for Apple silicon.
+- **Windows is tested in a VM** (the owner doesn't use Windows; spare
+  hardware is available as a fallback).
+- **Biometric unlock** (fingerprint/face) is wanted on Android first,
+  then Touch ID on macOS and Face ID/Touch ID on iOS. See Phase 3.1 and
+  the macOS/iOS phases.
+- Apps are versioned independently of the server; pushing straight to
+  `main` is fine; no licence file for now (owner's choice).
+- The owner's personal email must not appear in shipped artifacts or
+  metadata; use `curtis04ben@users.noreply.github.com` where an email is
+  required (e.g. the Debian maintainer field).
+
+**Suggested order of work** (the owner may reorder):
+
+1. **Android biometric unlock** (Phase 3.1): self-contained, testable on
+   the owner's phone, and the Autofill unlock flow reuses it.
+2. **Combined release pipeline** (Release plan): start with the Linux and
+   Android jobs in one `release.yml`, and cut the first combined release
+   as `v1.0.0`; add the Windows and macOS jobs as those phases land.
+3. **Windows** (Phase 4), tested in a VM.
+4. **macOS** (Phase 5), including the signing decision and Touch ID.
+5. **Android Autofill** (Phase 3.2).
+6. **Desktop "stay signed in"** via each OS's keyring (Desktop session
+   storage).
+7. **Sharing and the admin Users panel in the apps** (Phase 2 fast-follows).
+8. **iOS** (Phase 6).
 
 **Development machine setup** (a Fedora KDE box so far):
 
@@ -50,12 +88,46 @@ apps yet (web UI only): sharing, the admin Users panel, factory reset.
 - The Linux packaging tools (nfpm, appimagetool) are only needed to build
   packages locally; CI downloads pinned, checksum-verified copies itself.
 
-**How work gets shipped:** commit to `main` (fine for this project), bump
-the relevant version in `clients/gradle.properties`, then push a
+- **Windows VM for testing:** this machine has usable KVM (`/dev/kvm`),
+  so virt-manager/QEMU works. Windows 11 needs a virtual TPM (`swtpm`)
+  and UEFI/Secure Boot in the VM, or use Microsoft's Windows 11
+  development VM images, which are time-limited but preconfigured.
+  Install builds from the CI artifacts (see Release plan).
+- **Macs** are separate machines: test by downloading CI artifacts onto
+  the Apple silicon Mac. Anything that needs Xcode (the Touch ID helper,
+  `.icns` generation, iOS) runs on the macOS CI runner or that Mac.
+
+**How work gets shipped today** (until the combined pipeline replaces
+it): commit to `main`, bump `ratatoskrDesktopVersion` /
+`ratatoskrAndroidVersion` in `clients/gradle.properties`, then push a
 `linux-vX.Y.Z` / `android-vX.Y.Z` tag. The workflow refuses to release if
-the tag doesn't match the version. Each client has its own GitHub
-Release, so nobody downloads files for a platform they don't use.
-Details in `clients/README.md`.
+the tag doesn't match the version. Details in `clients/README.md`.
+
+**Things that have caught us out before** (check these first when
+something breaks):
+
+- XML comments in Android resources can't contain `--`.
+- GitHub Actions: a variable written to `$GITHUB_ENV` applies to *every
+  later step*. The Android signing step exports `RATATOSKR_KEYSTORE_FILE`,
+  and Gradle then needs all four signing variables to configure at all,
+  which is why they're set job-wide.
+- A command piped through `tee` hides its exit code unless `set -o
+  pipefail`; that once let a missing `apksigner` produce a blank
+  fingerprint in release notes.
+- Workflow failures: the Android workflow copies Gradle's "What went
+  wrong" into an error annotation, readable from the public API
+  (`/repos/.../check-runs/<job id>/annotations`) without a token. There's
+  no `gh` CLI or GitHub token on the dev machine; `git push` works, but
+  deleting releases or setting secrets needs the owner in the web UI.
+- The web UI's `api()` treats any 401 as "session expired" and logs out;
+  pass `expireOn401: false` for calls where 401 means "wrong password".
+- `restoreSession()` reconnects through `connectToServer()`, which
+  re-saves the server *without* a token; it then re-saves the loaded
+  session, so tokens survive repeated restores. Keep that in mind when
+  touching either function.
+- Sessions live in the server's memory (each holds the user's unwrapped
+  private key), so restarting the server signs everyone out; a saved
+  token then fails and the app falls back to Unlock, which is expected.
 
 ## Repository shape
 
@@ -68,7 +140,8 @@ Ratatoskr/
 │   └── android/      Android app module (AGP 9 requires it separate from shared/)
 ├── shared/assets/    master branding (logo SVG) that every client/platform icon derives from
 ├── docs/             this file, plus anything else durable
-└── .github/workflows/  tag-triggered release builds (linux-v*, android-v*)
+└── .github/workflows/  tag-triggered release builds (linux-v*, android-v* today;
+                        one combined v* release.yml planned, see Release plan)
 ```
 
 **Monorepo, not polyrepo.** Chosen specifically because development happens
@@ -204,7 +277,7 @@ skipped because its generated `.desktop` file can't carry the app ID or
 `StartupWMClass`. Pushing a `linux-vX.Y.Z` tag publishes a GitHub Release
 via `.github/workflows/linux-client-release.yml`. Details: `clients/README.md`.
 
-### Phase 3 — Android (released; Autofill is Phase 3.x)
+### Phase 3 — Android (released; biometrics are 3.1, Autofill 3.2)
 
 Mostly reuse: `clients/shared`'s screens carry over directly. `:shared`
 gained an Android target (AGP's KMP library plugin, OkHttp engine) and
@@ -229,7 +302,116 @@ module rather than an Android target on the KMP module. Real new work:
 minSdk 26 (Android 8.0) — chosen because that's where the Autofill
 Framework starts, so the stretch goal below doesn't force a bump.
 
-### Phase 3.x — Android Autofill
+### Phase 3.1 — Android biometric unlock (next up)
+
+Goal: unlock with fingerprint or face instead of typing the master
+password, on the Unlock screen. The same idea later applies to Touch ID
+on macOS (Phase 5) and Face ID/Touch ID on iOS (Phase 6); the shared
+interface below is designed for all three.
+
+**Why it isn't trivial:** the server derives the key that unwraps the
+user's private key from the *master password*, at `POST /auth/unlock`.
+There's nothing on the device a fingerprint can unlock by itself, and a
+session token alone doesn't help: tokens expire after 30 idle minutes
+(`RATATOSKR_SESSION_TIMEOUT`) and whenever the server restarts (sessions
+are in memory). Biometric unlock therefore has to produce something the
+server accepts at `/auth/unlock`.
+
+**Chosen design for v1: the master password, sealed by a
+biometric-bound Keystore key.**
+
+- *Opt-in, after a successful password unlock.* Offer once: "Unlock with
+  fingerprint or face next time?" (also a toggle in the header ⋮ menu).
+  Only offer when `BiometricManager.canAuthenticate(BIOMETRIC_STRONG)`
+  returns `BIOMETRIC_SUCCESS`.
+- *Enrolment:* create a Keystore AES-256-GCM key (separate alias from the
+  session key, e.g. `ratatoskr-biometric`) with
+  `setUserAuthenticationRequired(true)`,
+  `setInvalidatedByBiometricEnrollment(true)`, and on API 30+
+  `setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)`
+  (API 26–29: `setUserAuthenticationValidityDurationSeconds(-1)`, which
+  means "every use"). Every use of the key needs a fresh biometric, *including
+  encryption*, so enrolment shows one `BiometricPrompt` with a
+  `CryptoObject` wrapping an ENCRYPT cipher, then encrypts the master
+  password. Store the ciphertext + IV, the username and the server URL it
+  belongs to in private SharedPreferences (already excluded from backups).
+  Optionally request StrongBox (`setIsStrongBoxBacked`) and fall back if
+  it's unavailable.
+- *Unlock:* if an enrolment exists for the saved server, the Unlock screen
+  shows "Unlock with fingerprint" (and may open the prompt automatically
+  on launch). `BiometricPrompt` + a DECRYPT `CryptoObject` → decrypt →
+  the normal `AppState.unlock(username, password)`. The username is
+  stored, so nothing needs typing.
+- *Invalidation, each of which deletes the enrolment and falls back to
+  the password form with a short explanation:*
+  - `KeyPermanentlyInvalidatedException` when initialising the cipher (a
+    new fingerprint or face was enrolled, or biometrics were removed);
+  - `/auth/unlock` returns 401 (the password was changed on another device);
+  - Change server, factory reset, or the user turning the toggle off.
+  - After an in-app **Change master password**, delete it and offer
+    enrolment again (re-encrypting needs a new biometric prompt anyway).
+  - **Lock** must *not* remove it: locking and then unlocking with a
+    fingerprint is the point.
+- *The honest trade-off, to say in the opt-in text:* the master password
+  is stored on the phone, encrypted under a hardware-backed key that the
+  OS only releases after a strong biometric match. That's the same
+  principle as other managers' "unlock with biometrics", which store the
+  vault key; here the server holds the vault key, so the password is the
+  equivalent secret. Keep it opt-in. Kotlin `String`s can't be wiped from
+  memory, so drop references promptly; don't pretend otherwise.
+
+**Considered for later, not v1: device keys on the server.** The server
+would wrap the user's private key a second time under a per-device
+secret held in the biometric Keystore, so the device never stores the
+password. It's cleaner, but a real crypto and API change (a new
+endpoint, per-device wrapped keys, a revoke list in the web UI). It
+overlaps the Phase 1 open item on longer native sessions, so design them
+together if it's ever wanted.
+
+**Implementation notes:**
+
+- Library: `androidx.biometric:biometric` covers API 26+ (the framework
+  `BiometricPrompt` alone starts at 28). Check the current version when
+  starting; the stable line has lagged behind its alphas for a while.
+- `BiometricPrompt` needs a `FragmentActivity`. `MainActivity` is a
+  `ComponentActivity` today; switch it to `androidx.fragment.app.FragmentActivity`
+  (add `androidx.fragment:fragment`), since AppCompat isn't needed.
+- Shared code: add a `BiometricUnlock` interface in
+  `clients/shared/.../platform/` alongside `SessionStore`, supplied by
+  each platform's entry point and optional (null = feature hidden):
+  - `fun isAvailable(): Boolean` — hardware present and enrolled;
+  - `fun enrolledFor(serverUrl: String): String?` — the username, if set up;
+  - `suspend fun enrol(serverUrl: String, username: String, password: String): Boolean`
+    — shows the prompt;
+  - `suspend fun unlock(serverUrl: String): Pair<String, String>?` — shows
+    the prompt, returns username + password, or null if cancelled or failed;
+  - `fun clear()`.
+
+  Suspend functions wrap the prompt callbacks
+  (`suspendCancellableCoroutine`). `AppState` and `UnlockScreen` use it;
+  macOS and iOS implement the same interface later.
+- Prompt text: title "Unlock Ratatoskr", subtitle with the username and
+  server, negative button "Use master password".
+- Allowed authenticators: `BIOMETRIC_STRONG` only, so a crypto-backed
+  prompt is possible. Device PIN/pattern (`DEVICE_CREDENTIAL`) is
+  deliberately excluded: a phone PIN is usually weaker than the master
+  password.
+
+**Testing:** on the owner's phone (Galaxy A55 has fingerprint + face;
+face on many Samsungs is *not* BIOMETRIC_STRONG, so expect fingerprint
+only, and check what `canAuthenticate` reports). Cases:
+- enrol, then lock and unlock with a fingerprint;
+- kill and relaunch, then unlock with a fingerprint;
+- cancel the prompt (falls back to the password form);
+- enrol a new fingerprint in Settings (invalidates, falls back);
+- change the password on the web UI (the next biometric unlock gets a 401,
+  clears the enrolment, and asks for the password);
+- Change server clears it.
+
+`adb` can't fake a fingerprint on a real device, so a person has to
+touch the sensor; script everything around that.
+
+### Phase 3.2 — Android Autofill
 
 Goal: Ratatoskr as the phone's autofill service, filling logins in other
 apps and (via the browser) websites. This is a genuinely different
@@ -254,7 +436,8 @@ sizeable piece of work, so the plan below is staged.
   locked** (no valid token), respond with an authentication `IntentSender`
   (`FillResponse.Builder.setAuthentication`) that opens an unlock activity
   and returns the datasets once unlocked, so fill never happens without
-  an unlocked session.
+  an unlocked session. That activity should offer Phase 3.1's biometric
+  unlock when enrolled: a fingerprint is what makes autofill pleasant.
 - `onSaveRequest` (stage 2): offer to save new credentials as an entry.
 
 **Reuse:** the service can't use `AppState` (it's UI state); it should
@@ -297,24 +480,79 @@ decision — a password manager requesting autofill/accessibility
 permissions gets real scrutiny in Play's review process; not a v1
 assumption.
 
-### Before Phase 4/5: decisions that affect both
+### Release plan: one combined release (decided)
 
-- **Release tags for the desktop app.** Today `linux-vX.Y.Z` releases
-  the Linux packages, versioned by `ratatoskrDesktopVersion`. Windows and
-  macOS are the *same app*, so either (a) add `windows-v*`/`macos-v*` tags
-  with their own workflows, all reading `ratatoskrDesktopVersion`, or
-  (b) switch to one `desktop-vX.Y.Z` tag whose workflow runs a Linux +
-  Windows + macOS matrix into one release. (b) keeps the three in step
-  and is simpler to maintain, but each release then carries every OS's
-  files (still clearly named). Decide before writing the workflows.
-- **Nobody has a Windows machine or Mac for testing yet** (as of the
-  Linux/Android releases). CI can build everything (`workflow_dispatch`
-  produces downloadable artifacts without releasing), but someone needs
-  to install and click through each build before its first release: a
-  borrowed machine, a VM, or a friend.
-- **jpackage builds only for the OS it runs on**, so there's no
-  cross-compiling from Linux. Windows needs a `windows-latest` runner,
-  macOS a `macos-latest` runner.
+Every client ships together from one tag, `vX.Y.Z`, as one GitHub Release
+"Ratatoskr vX.Y.Z". (The server isn't part of it: it's deployed from
+source. If it ever gets published builds, e.g. a Docker image, tag those
+`server-vX.Y.Z` so they can't be confused with client releases.)
+
+**Assets in each release:**
+
+| Platform | File | Built by |
+|---|---|---|
+| Linux (Fedora/RHEL) | `ratatoskr-X.Y.Z-1.x86_64.rpm` | `ubuntu-24.04` runner: `createDistributable` + `desktop/packaging/linux/build-packages.sh` (existing) |
+| Linux (Debian/Ubuntu) | `ratatoskr_X.Y.Z_amd64.deb` | same job |
+| Linux (any) | `Ratatoskr-x86_64.AppImage` | same job |
+| Windows | `Ratatoskr-X.Y.Z.exe` (installer) | `windows-latest` runner: `:desktop:packageExe` (Phase 4) |
+| macOS (Apple silicon) | `Ratatoskr-X.Y.Z-arm64.pkg` | `macos-latest` runner (arm64): `:desktop:packagePkg` (Phase 5) |
+| Android | `Ratatoskr-X.Y.Z.apk` | `ubuntu-24.04` runner: `:android:assembleRelease`, signed (existing) |
+| All | `SHA256SUMS` covering every file above | release job |
+
+Give the macOS file an explicit `-arm64` so nobody mistakes it for an
+Intel build. The owner asked for a `.pkg`, which installs Ratatoskr.app into
+/Applications; a `.dmg` (`packageDmg`, drag-to-Applications) could be
+added alongside later if wanted.
+
+**Versioning:**
+
+- Replace `ratatoskrDesktopVersion` and `ratatoskrAndroidVersion` in
+  `clients/gradle.properties` with one `ratatoskrVersion`, and update
+  every reader: `clients/desktop/build.gradle.kts` (`packageVersion`),
+  `clients/android/build.gradle.kts` (`versionName`, and `versionCode`,
+  derived as MAJOR×10000 + MINOR×100 + PATCH), and
+  `desktop/packaging/linux/build-packages.sh` (reads the property by name
+  with sed).
+- **Make the first combined release `v1.0.0`.** macOS requires the
+  bundle version's major part to be > 0, so 0.x can't be used there;
+  1.0.0 is also the natural "every platform" milestone. Then delete the
+  macOS `packageVersion = "1.0.0"` override in `build.gradle.kts`, so
+  macOS uses the shared version like everything else.
+- Android `versionCode` must keep increasing past the last separate
+  release (0.1.2 → 102); 1.0.0 → 10000 does.
+- The Android signing key and `applicationId` stay the same, so the
+  combined APK installs as an update over the existing app.
+
+**Workflow** (`.github/workflows/release.yml`, replacing
+`linux-client-release.yml` and `android-client-release.yml` once it
+works; delete those two at that point):
+
+- Triggers: `push: tags: ["v*"]` and `workflow_dispatch` (artifacts only,
+  no release, which is how builds reach the Windows VM and the Mac for
+  testing before a tag).
+- A `version` job reads `ratatoskrVersion` and fails if the tag doesn't
+  match (same check the current workflows do).
+- Jobs `linux`, `windows`, `macos`, `android` run in parallel, each
+  uploading its files with `actions/upload-artifact`. Reuse the existing
+  workflows' steps: pinned + checksum-verified nfpm/appimagetool; the
+  keystore check, which names the wrong secret; the Gradle-error
+  annotations; and `set -o pipefail` around anything piped through `tee`.
+  Run `:shared:jvmTest` once (e.g. in the `linux` job) rather than in
+  every job.
+- A `release` job (`needs:` all four, only for tag pushes) downloads the
+  artifacts, writes one `SHA256SUMS`, and runs `gh release create` with
+  notes containing a per-platform install table: dnf/apt commands,
+  AppImage, the Windows SmartScreen "More info → Run anyway" step, the
+  macOS unsigned-app steps (Phase 5), the Android "install unknown apps"
+  steps, and the Android signing-certificate SHA-256 (from `apksigner`).
+- Staging: first ship `release.yml` with just `linux` + `android` (+
+  `release`), cut v1.0.0 from that, and add `windows`/`macos` as those
+  phases land. A release without Windows/macOS files is fine in between.
+
+**After switching:** update the root `README.md` (Platforms table and
+Getting started), `clients/README.md` (Versioning and releases, and the
+Android Releases section) and this file's status table to the single
+`v*` scheme. Old `linux-v*`/`android-v*` releases stay for history.
 
 ### Desktop session storage (all three desktop OSes)
 
@@ -343,97 +581,174 @@ when the `SessionStore` returns one.
 
 ### Phase 4 — Windows
 
-Mostly packaging on the desktop app that already exists; the Compose
-Desktop DSL in `clients/desktop/build.gradle.kts` already lists
-`TargetFormat.Msi`/`Exe` and a `windows {}` block.
+Mostly packaging on the desktop app that already exists: `clients/desktop`
+runs on Windows unchanged (Compose Desktop on the JVM), and its
+`build.gradle.kts` already lists `TargetFormat.Exe`/`Msi` with a
+`windows {}` block. **Deliverable: `Ratatoskr-X.Y.Z.exe`**, a jpackage
+installer, built by the `windows` job of the combined `release.yml`.
 
 **Must be settled before the first Windows release (permanent after):**
 
-- **`upgradeUuid`** in `windows {}`: a fixed, randomly generated UUID.
-  Without it, each MSI installs *alongside* the previous version instead
+- **`upgradeUuid`** in `windows {}`: a fixed, randomly generated UUID
+  (jpackage's `--win-upgrade-uuid`, used by both `.exe` and `.msi`).
+  Without it each version installs *alongside* the previous one instead
   of upgrading it. Generate once (`uuidgen`), commit it, never change it.
-- Keep `perUserInstall = true` (no admin rights needed to install), and
-  set `shortcut = true` / `menu = true` so it appears in the Start menu
-  under `menuGroup`.
+- Keep `perUserInstall = true` (no admin rights needed), and set
+  `shortcut = true` and `menu = true` so it gets a Start menu entry (under
+  `menuGroup`, currently "Ratatoskr") and a desktop shortcut.
 
 **To do:**
 
 - **Icon:** replace the placeholder PNG with a real `.ico` holding 16–256
   px sizes, e.g. `magick clients/desktop/icons/ratatoskr_512.png -define
-  icon:auto-resize=256,128,64,48,32,16 clients/desktop/icons/ratatoskr.ico`.
-- **Installer toolchain:** jpackage's `.msi`/`.exe` need the WiX Toolset.
-  JDK 21's jpackage expects WiX 3.x (support for WiX 4+ only arrived in
-  later JDKs). Check what the `windows-latest` runner image provides, and
-  install WiX 3 in the workflow if needed.
-- **Version format:** MSI versions are `MAJOR.MINOR.BUILD`, each part with
-  a limited range. Check jpackage accepts the current `0.x.y` on Windows
-  (macOS doesn't — see Phase 5) before tagging.
-- **Workflow:** `windows-latest` runner, same shape as the Linux one:
-  Temurin 21 (has jmods), `./gradlew :shared:jvmTest`, then
-  `:desktop:packageMsi` (and/or `packageExe`), `SHA256SUMS`, release.
-  Run the Gradle steps under `shell: bash` so the existing scripts'
-  idioms still work.
-- **Check on a real Windows machine:** installs without admin, Start menu
-  entry and icon, the taskbar icon while running, upgrade over the
-  previous version (the `upgradeUuid` test), uninstall, and that
-  `%APPDATA%\Ratatoskr\settings.properties` remembers the server.
-- **SmartScreen:** unsigned installers get "Windows protected your PC"
-  (More info → Run anyway). Fine for personal use; getting rid of it
-  needs a code-signing certificate (a paid certificate, or a hosted
-  signing service), which is a cost decision for later.
+  icon:auto-resize=256,128,64,48,32,16 clients/desktop/icons/ratatoskr.ico`
+  (commit the `.ico`; ImageMagick is on the dev machine).
+- **Installer toolchain:** jpackage's `.exe`/`.msi` need the WiX Toolset.
+  JDK 21's jpackage expects WiX **3.x** (WiX 4+ support only arrived in
+  later JDKs). Check what the `windows-latest` image provides; if needed,
+  install WiX 3 in the job (e.g. `choco install wixtoolset`, pinned).
+- **Version:** Windows installer versions are `MAJOR.MINOR.BUILD` with
+  range limits per part; 1.0.0-style versions are fine, and the combined
+  release starts at 1.0.0 (see Release plan).
+- **The `windows` job:** `runs-on: windows-latest`, Temurin 21 (includes
+  jmods, needed by jlink), `./gradlew --no-daemon :desktop:packageExe`,
+  upload `desktop/build/compose/binaries/main/exe/*.exe` renamed to
+  `Ratatoskr-X.Y.Z.exe`. Use `shell: bash` (Git Bash is on the runner) so
+  the scripts match the Linux/Android jobs. `./gradlew` works in bash;
+  `gradlew.bat` is the cmd equivalent.
+- **Runtime modules:** jlink's module list (`modules(...)` in
+  `nativeDistributions`) was set from `suggestRuntimeModules` on Linux;
+  re-check it on Windows in case the Windows AWT/TLS stack needs more
+  (e.g. `jdk.crypto.mscapi` for the Windows certificate store, which
+  matters for `https://` servers).
+- **Session storage:** `DesktopSessionStore` already uses
+  `%APPDATA%\Ratatoskr`; "stay signed in" via DPAPI is under Desktop
+  session storage above.
+- **Windows Hello** (the Windows equivalent of Touch ID) hasn't been
+  requested; it's reachable only through WinRT APIs, awkward from the JVM,
+  so leave it unless asked.
 
-### Phase 5 — macOS
+**Testing in the Windows VM** (see machine setup above): install from the
+`workflow_dispatch` artifact, then check:
+- it installs without admin rights;
+- the Start menu entry and desktop shortcut appear with the right icon;
+- the taskbar icon while running;
+- connect, unlock and entries against a server reachable from the VM (the
+  host's LAN address, or Tailscale inside the VM);
+- the server is remembered after restarting the app;
+- installing the next build upgrades in place (the `upgradeUuid` test);
+- uninstalling is clean.
 
-Same pattern: packaging on the existing desktop app. `TargetFormat.Dmg`
-and a `macOS {}` block are already in `clients/desktop/build.gradle.kts`.
+**SmartScreen:** unsigned installers show "Windows protected your PC";
+users click *More info → Run anyway*, and the release notes must say so.
+Removing that needs a code-signing certificate (paid, or a hosted signing
+service), a cost decision for later.
+
+### Phase 5 — macOS (Apple silicon only)
+
+Same pattern: packaging on the existing desktop app, with a `macOS {}`
+block already in `clients/desktop/build.gradle.kts`. **Deliverable:
+`Ratatoskr-X.Y.Z-arm64.pkg`** (`TargetFormat.Pkg`, installs into
+/Applications), built by the `macos` job on `macos-latest`, which is
+Apple silicon. Intel Macs are out of scope (owner's decision), so there's
+no x86_64 build or universal binary; say "Apple silicon" in the release
+notes.
 
 **Must be settled before the first macOS release (permanent after):**
 
 - **`bundleID`** is still the placeholder `com.ratatoskr.desktop`. Change
   it to the project's app ID, `io.github.curtis04ben.Ratatoskr`, *before*
-  the first release; macOS keys preferences, Keychain items and
+  the first release: macOS keys preferences, Keychain items and privacy
   permissions on it.
-- **Bundle version:** macOS requires the version's major part to be > 0,
-  so `ratatoskrDesktopVersion`'s `0.x.y` can't be used as-is. The build
-  file currently hard-codes `packageVersion = "1.0.0"` for macOS as a
-  placeholder, which would never change between releases. Pick a rule:
-  e.g. move the whole desktop app to 1.0.0 when macOS ships (simplest), or
-  derive the macOS version from the desktop one. It must increase with
-  every release.
+- **Bundle version:** macOS needs the version's major part > 0. The
+  combined release starting at **1.0.0** solves this; delete the
+  hard-coded `packageVersion = "1.0.0"` in the `macOS {}` block at the
+  same time so the shared version flows through.
+- **Signing:** unsigned vs Developer ID signed + notarized (below). It
+  decides how Gatekeeper treats downloads, and whether Touch ID can be
+  done properly.
 
 **To do:**
 
-- **Icon:** a real `.icns`. Easiest on the macOS runner: build an
-  `.iconset` folder of PNGs (16–1024 px, @1x/@2x) from
-  `ratatoskr_512.png`/the SVG and run `iconutil -c icns`.
-- **Architecture:** `macos-latest` runners are Apple silicon (arm64), and
-  jpackage builds for the runner's architecture. Intel Macs would need
-  a separate Intel build (and Intel runner availability is shrinking);
-  arm64-only is a reasonable start.
-- **Workflow:** `macos-latest`, Temurin 21, tests, `:desktop:packageDmg`,
-  `SHA256SUMS`, release.
-- **Gatekeeper:** an unsigned, un-notarized app downloaded from the web
-  is blocked on first open ("cannot be opened because the developer
-  cannot be verified" / "is damaged"). Users can get past it (right-click →
-  Open, or `xattr -dr com.apple.quarantine /Applications/Ratatoskr.app`),
-  and the release notes must say so. Proper signing + notarization needs
-  an Apple Developer account ($99/year); Compose supports it via
-  `macOS { signing { } notarization { } }` with the certificate and an
-  App Store Connect API key as CI secrets. Decide when this phase starts.
-- **Mac conventions worth checking:** the app menu (app name, Quit,
-  ⌘Q), ⌘ instead of Ctrl for shortcuts, the Dock icon, and that the
-  settings file lands in `~/Library/Application Support/Ratatoskr`.
+- **Icon:** a real `.icns`. Generate on the macOS runner (or the Mac):
+  make a `ratatoskr.iconset/` of PNGs (`icon_16x16.png` … `icon_512x512@2x.png`,
+  16–1024 px) from `shared/assets/ratatoskr-mark.svg` or
+  `desktop/icons/ratatoskr_512.png` (upscaling 512 → 1024 is soft; the SVG
+  is better), then `iconutil -c icns ratatoskr.iconset`. Commit the `.icns`.
+- **The `macos` job:** `runs-on: macos-latest`, Temurin 21 for arm64,
+  `./gradlew --no-daemon :desktop:packagePkg`, rename the output to
+  `Ratatoskr-X.Y.Z-arm64.pkg`.
+- **Code signatures on Apple silicon:** arm64 code must carry at least an
+  ad-hoc signature to run at all. Confirm the built app has one
+  (`codesign -dv --verbose=2 /Applications/Ratatoskr.app`) before
+  worrying about anything else.
+- **Mac conventions to check:** the app menu shows "Ratatoskr" with
+  About/Quit (⌘Q), standard ⌘ shortcuts (⌘C/⌘V in text fields), the Dock
+  icon, window restore, and that `~/Library/Application Support/Ratatoskr/settings.properties`
+  remembers the server.
+- **Runtime modules:** re-check the jlink module list on macOS, as for
+  Windows.
+
+**Gatekeeper (unsigned builds).** Downloaded, unsigned, un-notarized
+apps and installers are blocked on first open. On current macOS (15 and
+later), right-click → Open no longer overrides this. Users must try to
+open it once, then go to **System Settings → Privacy & Security → "Open
+Anyway"** (for the `.pkg`, and possibly again for the app). The release
+notes need these steps. The alternative is an Apple Developer account
+($99/year) for Developer ID signing + notarization. Compose supports it:
+`macOS { signing { sign.set(true); identity.set(...) }; notarization { ... } }`,
+with the certificate (`.p12`, base64) and an App Store Connect API key
+as CI secrets, the same pattern as the Android keystore. Decide at the
+start of this phase; it's also the deciding factor for Touch ID below.
+
+**Touch ID unlock** (after Android's Phase 3.1, same `BiometricUnlock`
+interface):
+
+- The proper way: store the master password (same design and caveats as
+  Phase 3.1) in a **Keychain item with an access control of
+  `.biometryCurrentSet`**. macOS itself then demands Touch ID to read it,
+  and invalidates it when fingerprints change. That kind of item lives in
+  the *data protection* keychain, which requires the app to be **signed
+  with a keychain-access-groups entitlement**, so it needs the Developer
+  ID signing above.
+- From the JVM, the practical route is a tiny **Swift helper executable**
+  bundled inside the app (store / read / delete, using the
+  `Security` and `LocalAuthentication` frameworks), called by the desktop
+  `BiometricUnlock` implementation over stdin/stdout. Build it on the
+  macOS runner with `swiftc` and add it to the bundle (Compose
+  `appResourcesRootDir` or jpackage `--app-content`), signed along with the
+  app. JNA straight into the Objective-C runtime is possible but much
+  fiddlier.
+- **If the app stays unsigned:** the only option is a
+  `LAContext.evaluatePolicy` yes/no check in front of an ordinary
+  Keychain item. That is a UI gate, not encryption bound to the
+  fingerprint. Don't present it as equivalent. Either skip Touch ID for
+  unsigned builds or label it clearly, and make this call together with
+  the signing decision.
 
 ### Phase 6 — iOS
 
 The newest, least battle-tested part of Compose Multiplatform — expect
-more friction here than the other four phases.
+more friction here than the other phases. Work: an `iosMain` for
+`:shared` (targets `iosArm64` + `iosSimulatorArm64`; the Ktor engine for
+iOS is `ktor-client-darwin`), an Xcode app project that hosts the Compose
+UI, plus iOS versions of `SessionStore` (Keychain), `PlatformFiles`
+(`UIDocumentPickerViewController`) and `BiometricUnlock`.
 
-Distribution is materially different from everywhere else: no
-"download and run" the way desktop/Android allow. Realistically means
-Xcode-local builds or TestFlight for personal use, which also means an
-Apple Developer account. Worth setting that expectation now so "v1 for
-iOS" isn't measured against the same yardstick as the other four.
+**Face ID / Touch ID** on iOS is the easy case: Kotlin/Native can call
+`platform.LocalAuthentication` and `platform.Security` directly from
+`iosMain`. Store the secret in a Keychain item with
+`SecAccessControlCreateWithFlags(..., kSecAccessControlBiometryCurrentSet)`.
+**`NSFaceIDUsageDescription` must be in Info.plist**, or the app crashes
+the first time Face ID is used.
+
+Distribution is materially different from everywhere else: there's no
+"download and run". Realistically it means Xcode builds onto the owner's
+own devices, or TestFlight, both needing an Apple Developer account
+(shared with the macOS signing decision). iOS won't be in the combined
+GitHub Release as a file; the release notes can point to TestFlight if
+that's used. Set expectations accordingly: "v1 for iOS" isn't the same
+yardstick as the other platforms.
 
 ## Testing note for whoever picks this up next
 
