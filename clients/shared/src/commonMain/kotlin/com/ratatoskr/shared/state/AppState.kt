@@ -99,6 +99,10 @@ class AppState(private val sessionStore: SessionStore? = null) {
             screen = Screen.ServerConnect
             return
         }
+        // connectToServer saved the server with no token; put the saved
+        // token back, so it's only dropped if the server rejects it below
+        // (not, say, on a network blip while checking it).
+        store.save(saved)
         val token = saved.token
         if (token == null || screen != Screen.Unlock) return
 
