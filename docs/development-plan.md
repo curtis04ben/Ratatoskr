@@ -28,11 +28,14 @@ apps yet (web UI only): sharing, the admin Users panel, factory reset.
 **Decisions already made by the project owner** (don't re-ask; revisit
 only if something makes one unworkable, and say so):
 
-- **One combined release for every app.** A single `vX.Y.Z` tag builds
-  Linux (`.rpm`, `.deb`, AppImage), Windows (`.exe`), macOS (`.pkg`) and
-  Android (`.apk`) into one GitHub Release, with **one shared version
-  number** for all clients. This replaces the separate `linux-v*` /
-  `android-v*` releases. See "Release plan" below.
+- **Two releases: Desktop and Mobile.** A `desktop-vX.Y.Z` tag builds
+  Linux (`.rpm`, `.deb`, AppImage), Windows (`.exe`) and macOS (`.pkg`)
+  into one GitHub Release, "Ratatoskr Desktop"; a `mobile-vX.Y.Z` tag
+  builds Android (`.apk`), and later iOS, into "Ratatoskr Mobile". Each has
+  its own version number, shared by the platforms inside it. This replaces
+  the per-platform `linux-v*` / `android-v*` releases. (An earlier plan for
+  one release covering everything was dropped in favour of this split.)
+  See "Release plan" below.
 - **macOS: Apple silicon (arm64) only.** Intel Macs are out of scope
   (Apple no longer supports them). The owner has both kinds of Mac for
   testing but develops and tests for Apple silicon.
@@ -51,9 +54,11 @@ only if something makes one unworkable, and say so):
 
 1. **Android biometric unlock** (Phase 3.1): self-contained, testable on
    the owner's phone, and the Autofill unlock flow reuses it.
-2. **Combined release pipeline** (Release plan): start with the Linux and
-   Android jobs in one `release.yml`, and cut the first combined release
-   as `v1.0.0`; add the Windows and macOS jobs as those phases land.
+2. **Desktop/Mobile release pipelines** (Release plan): turn the Linux
+   workflow into `desktop-release.yml` and cut `desktop-v1.0.0` (Linux
+   only at first), and turn the Android workflow into `mobile-release.yml`
+   for the next Android release, e.g. the one with biometrics. Add the
+   Windows and macOS jobs to the desktop workflow as those phases land.
 3. **Windows** (Phase 4), tested in a VM.
 4. **macOS** (Phase 5), including the signing decision and Touch ID.
 5. **Android Autofill** (Phase 3.2).
@@ -97,7 +102,7 @@ only if something makes one unworkable, and say so):
   the Apple silicon Mac. Anything that needs Xcode (the Touch ID helper,
   `.icns` generation, iOS) runs on the macOS CI runner or that Mac.
 
-**How work gets shipped today** (until the combined pipeline replaces
+**How work gets shipped today** (until the Desktop/Mobile pipelines replace
 it): commit to `main`, bump `ratatoskrDesktopVersion` /
 `ratatoskrAndroidVersion` in `clients/gradle.properties`, then push a
 `linux-vX.Y.Z` / `android-vX.Y.Z` tag. The workflow refuses to release if
@@ -141,7 +146,7 @@ Ratatoskr/
 ├── shared/assets/    master branding (logo SVG) that every client/platform icon derives from
 ├── docs/             this file, plus anything else durable
 └── .github/workflows/  tag-triggered release builds (linux-v*, android-v* today;
-                        one combined v* release.yml planned, see Release plan)
+                        desktop-v* and mobile-v* planned, see Release plan)
 ```
 
 **Monorepo, not polyrepo.** Chosen specifically because development happens
@@ -480,79 +485,104 @@ decision — a password manager requesting autofill/accessibility
 permissions gets real scrutiny in Play's review process; not a v1
 assumption.
 
-### Release plan: one combined release (decided)
+### Release plan: Desktop and Mobile releases (decided)
 
-Every client ships together from one tag, `vX.Y.Z`, as one GitHub Release
-"Ratatoskr vX.Y.Z". (The server isn't part of it: it's deployed from
-source. If it ever gets published builds, e.g. a Docker image, tag those
-`server-vX.Y.Z` so they can't be confused with client releases.)
+Clients ship as two kinds of GitHub Release. The server isn't in either:
+it's deployed from source. If it ever gets published builds (e.g. a
+Docker image), tag those `server-vX.Y.Z`.
 
-**Assets in each release:**
+| Release | Tag | Version property | Workflow | Replaces |
+|---|---|---|---|---|
+| Ratatoskr Desktop vX.Y.Z | `desktop-vX.Y.Z` | `ratatoskrDesktopVersion` (exists) | `desktop-release.yml` | `linux-client-release.yml` |
+| Ratatoskr Mobile vX.Y.Z | `mobile-vX.Y.Z` | `ratatoskrMobileVersion` (rename of `ratatoskrAndroidVersion`) | `mobile-release.yml` | `android-client-release.yml` |
+
+**Desktop release assets:**
 
 | Platform | File | Built by |
 |---|---|---|
-| Linux (Fedora/RHEL) | `ratatoskr-X.Y.Z-1.x86_64.rpm` | `ubuntu-24.04` runner: `createDistributable` + `desktop/packaging/linux/build-packages.sh` (existing) |
+| Linux (Fedora/RHEL) | `ratatoskr-X.Y.Z-1.x86_64.rpm` | `linux` job, `ubuntu-24.04`: `createDistributable` + `desktop/packaging/linux/build-packages.sh` (existing) |
 | Linux (Debian/Ubuntu) | `ratatoskr_X.Y.Z_amd64.deb` | same job |
 | Linux (any) | `Ratatoskr-x86_64.AppImage` | same job |
-| Windows | `Ratatoskr-X.Y.Z.exe` (installer) | `windows-latest` runner: `:desktop:packageExe` (Phase 4) |
-| macOS (Apple silicon) | `Ratatoskr-X.Y.Z-arm64.pkg` | `macos-latest` runner (arm64): `:desktop:packagePkg` (Phase 5) |
-| Android | `Ratatoskr-X.Y.Z.apk` | `ubuntu-24.04` runner: `:android:assembleRelease`, signed (existing) |
-| All | `SHA256SUMS` covering every file above | release job |
+| Windows | `Ratatoskr-X.Y.Z.exe` (installer) | `windows` job, `windows-latest`: `:desktop:packageExe` (Phase 4) |
+| macOS (Apple silicon) | `Ratatoskr-X.Y.Z-arm64.pkg` | `macos` job, `macos-latest` (arm64): `:desktop:packagePkg` (Phase 5) |
+| All | `SHA256SUMS` | `release` job |
 
-Give the macOS file an explicit `-arm64` so nobody mistakes it for an
-Intel build. The owner asked for a `.pkg`, which installs Ratatoskr.app into
-/Applications; a `.dmg` (`packageDmg`, drag-to-Applications) could be
-added alongside later if wanted.
+The macOS file name says `-arm64` so nobody mistakes it for an Intel
+build. The owner asked for a `.pkg` (installs Ratatoskr.app into
+/Applications); a `.dmg` (`packageDmg`) could be added alongside later.
 
-**Versioning:**
+**Mobile release assets:**
 
-- Replace `ratatoskrDesktopVersion` and `ratatoskrAndroidVersion` in
-  `clients/gradle.properties` with one `ratatoskrVersion`, and update
-  every reader: `clients/desktop/build.gradle.kts` (`packageVersion`),
-  `clients/android/build.gradle.kts` (`versionName`, and `versionCode`,
-  derived as MAJOR×10000 + MINOR×100 + PATCH), and
-  `desktop/packaging/linux/build-packages.sh` (reads the property by name
-  with sed).
-- **Make the first combined release `v1.0.0`.** macOS requires the
-  bundle version's major part to be > 0, so 0.x can't be used there;
-  1.0.0 is also the natural "every platform" milestone. Then delete the
-  macOS `packageVersion = "1.0.0"` override in `build.gradle.kts`, so
-  macOS uses the shared version like everything else.
-- Android `versionCode` must keep increasing past the last separate
-  release (0.1.2 → 102); 1.0.0 → 10000 does.
-- The Android signing key and `applicationId` stay the same, so the
-  combined APK installs as an update over the existing app.
+| Platform | File | Built by |
+|---|---|---|
+| Android | `Ratatoskr-X.Y.Z.apk` (signed) | `android` job, `ubuntu-24.04`: `:android:assembleRelease` (existing) |
+| iOS | *no file*: iOS can't sideload a downloaded app | `ios` job, `macos-latest` (Phase 6): builds, and uploads to TestFlight if that route is chosen; the release notes then link to TestFlight |
+| All | `SHA256SUMS` | `release` job |
 
-**Workflow** (`.github/workflows/release.yml`, replacing
-`linux-client-release.yml` and `android-client-release.yml` once it
-works; delete those two at that point):
+**Versions:**
 
-- Triggers: `push: tags: ["v*"]` and `workflow_dispatch` (artifacts only,
-  no release, which is how builds reach the Windows VM and the Mac for
-  testing before a tag).
-- A `version` job reads `ratatoskrVersion` and fails if the tag doesn't
-  match (same check the current workflows do).
-- Jobs `linux`, `windows`, `macos`, `android` run in parallel, each
-  uploading its files with `actions/upload-artifact`. Reuse the existing
-  workflows' steps: pinned + checksum-verified nfpm/appimagetool; the
-  keystore check, which names the wrong secret; the Gradle-error
-  annotations; and `set -o pipefail` around anything piped through `tee`.
-  Run `:shared:jvmTest` once (e.g. in the `linux` job) rather than in
-  every job.
-- A `release` job (`needs:` all four, only for tag pushes) downloads the
-  artifacts, writes one `SHA256SUMS`, and runs `gh release create` with
-  notes containing a per-platform install table: dnf/apt commands,
-  AppImage, the Windows SmartScreen "More info → Run anyway" step, the
-  macOS unsigned-app steps (Phase 5), the Android "install unknown apps"
-  steps, and the Android signing-certificate SHA-256 (from `apksigner`).
-- Staging: first ship `release.yml` with just `linux` + `android` (+
-  `release`), cut v1.0.0 from that, and add `windows`/`macos` as those
-  phases land. A release without Windows/macOS files is fine in between.
+- **Desktop:** keep `ratatoskrDesktopVersion`. Make the first
+  `desktop-v` release **1.0.0**: macOS requires the bundle version's
+  major part to be > 0, so 0.x can't be used there, and 1.0.0 is the
+  natural "Linux + Windows + macOS" milestone. At the same time, delete
+  the macOS `packageVersion = "1.0.0"` override in
+  `clients/desktop/build.gradle.kts` so macOS uses the shared version.
+  (Linux was at 0.1.3, so jumping to 1.0.0 is fine.) If Windows/macOS
+  aren't ready yet, it's also fine to cut `desktop-v1.0.0` with Linux
+  only and add them in a later desktop release.
+- **Mobile:** rename `ratatoskrAndroidVersion` → `ratatoskrMobileVersion`
+  and update its readers (`clients/android/build.gradle.kts`; later the
+  iOS build). Android's `versionCode` (MAJOR×10000 + MINOR×100 + PATCH)
+  must keep increasing past the last Android release (0.1.2 → 102), so
+  just continue the numbering: e.g. the biometrics release as
+  `mobile-v0.2.0`. When the mobile side goes to 1.0.0 is the owner's call
+  (a natural point is when iOS joins). iOS will need the same version as
+  `CFBundleShortVersionString`, plus an always-increasing build number
+  (`CFBundleVersion`); derive it the same way as `versionCode`.
+- The Android signing key and `applicationId` don't change, so APKs from
+  `mobile-v` releases install as updates over the existing app.
+- Desktop and mobile versions are independent. A desktop-only fix
+  doesn't touch mobile, and vice versa.
 
-**After switching:** update the root `README.md` (Platforms table and
-Getting started), `clients/README.md` (Versioning and releases, and the
-Android Releases section) and this file's status table to the single
-`v*` scheme. Old `linux-v*`/`android-v*` releases stay for history.
+**Workflows** (build each by evolving the existing one; delete the old
+file once the new one has shipped a release):
+
+- **`desktop-release.yml`**, from `linux-client-release.yml`:
+  - Triggers: `push: tags: ["desktop-v*"]` and `workflow_dispatch`
+    (artifacts only, no release; this is how test builds reach the
+    Windows VM and the Mac before tagging).
+  - A `version` job checks the tag matches `ratatoskrDesktopVersion`.
+  - Jobs `linux`, `windows`, `macos` in parallel, each uploading its files
+    with `actions/upload-artifact`. Run `:shared:jvmTest` once, in
+    `linux`.
+  - A `release` job (`needs:` all three, tag pushes only) downloads the
+    artifacts, writes one `SHA256SUMS`, and runs `gh release create` with
+    notes giving install steps per OS: dnf/apt/AppImage; Windows
+    SmartScreen's "More info → Run anyway"; macOS's Privacy & Security
+    "Open Anyway" (Phase 5).
+  - Start with just `linux` + `release`, and add `windows`/`macos` as
+    Phases 4/5 land.
+- **`mobile-release.yml`**, from `android-client-release.yml`:
+  - Triggers `mobile-v*` + `workflow_dispatch`, with the version check
+    against `ratatoskrMobileVersion`.
+  - Keep everything the Android workflow already does: the keystore check
+    that names the wrong secret, job-wide signing variables, Gradle-error
+    annotations, the `apksigner` fingerprint (with `pipefail`), and
+    install steps + fingerprint in the notes.
+  - Restructure it as an `android` job + a `release` job, so an `ios` job
+    can slot in later (Phase 6).
+- Carry over from the existing workflows: pinned, checksum-verified tool
+  downloads (nfpm, appimagetool); `set -o pipefail` around anything piped
+  through `tee`; and failures surfacing as annotations.
+
+**After switching:**
+- root `README.md`: the Platforms table, Getting started and "Versions and
+  releases";
+- `clients/README.md`: "Versioning and releases" and the Android
+  "Releases" section;
+- this file's status table and "How work gets shipped".
+
+Old `linux-v*`/`android-v*` releases stay on GitHub for history.
 
 ### Desktop session storage (all three desktop OSes)
 
@@ -585,7 +615,7 @@ Mostly packaging on the desktop app that already exists: `clients/desktop`
 runs on Windows unchanged (Compose Desktop on the JVM), and its
 `build.gradle.kts` already lists `TargetFormat.Exe`/`Msi` with a
 `windows {}` block. **Deliverable: `Ratatoskr-X.Y.Z.exe`**, a jpackage
-installer, built by the `windows` job of the combined `release.yml`.
+installer, built by the `windows` job of `desktop-release.yml`.
 
 **Must be settled before the first Windows release (permanent after):**
 
@@ -608,8 +638,8 @@ installer, built by the `windows` job of the combined `release.yml`.
   later JDKs). Check what the `windows-latest` image provides; if needed,
   install WiX 3 in the job (e.g. `choco install wixtoolset`, pinned).
 - **Version:** Windows installer versions are `MAJOR.MINOR.BUILD` with
-  range limits per part; 1.0.0-style versions are fine, and the combined
-  release starts at 1.0.0 (see Release plan).
+  range limits per part; 1.0.0-style versions are fine, and desktop
+  releases start at 1.0.0 (see Release plan).
 - **The `windows` job:** `runs-on: windows-latest`, Temurin 21 (includes
   jmods, needed by jlink), `./gradlew --no-daemon :desktop:packageExe`,
   upload `desktop/build/compose/binaries/main/exe/*.exe` renamed to
@@ -661,9 +691,9 @@ notes.
   the first release: macOS keys preferences, Keychain items and privacy
   permissions on it.
 - **Bundle version:** macOS needs the version's major part > 0. The
-  combined release starting at **1.0.0** solves this; delete the
+  desktop releases starting at **1.0.0** solve this; delete the
   hard-coded `packageVersion = "1.0.0"` in the `macOS {}` block at the
-  same time so the shared version flows through.
+  same time so the desktop version flows through.
 - **Signing:** unsigned vs Developer ID signed + notarized (below). It
   decides how Gatekeeper treats downloads, and whether Touch ID can be
   done properly.
@@ -745,7 +775,7 @@ the first time Face ID is used.
 Distribution is materially different from everywhere else: there's no
 "download and run". Realistically it means Xcode builds onto the owner's
 own devices, or TestFlight, both needing an Apple Developer account
-(shared with the macOS signing decision). iOS won't be in the combined
+(shared with the macOS signing decision). iOS won't be in the Mobile
 GitHub Release as a file; the release notes can point to TestFlight if
 that's used. Set expectations accordingly: "v1 for iOS" isn't the same
 yardstick as the other platforms.
