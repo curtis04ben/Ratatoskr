@@ -1,15 +1,15 @@
 /*
  * Pure-JavaScript TOTP (RFC 6238), deliberately NOT using window.crypto.subtle.
  *
- * SubtleCrypto only works in "secure contexts" (HTTPS or localhost) --
- * it's simply undefined over plain HTTP on a LAN/Tailscale hostname, which
+ * SubtleCrypto only works in "secure contexts" (HTTPS or localhost).
+ * It's simply undefined over plain HTTP on a LAN/Tailscale hostname, which
  * is exactly how this app is often deployed. Hand-rolling SHA-1/HMAC here
  * means 2FA codes work regardless of whether the deployment has a TLS
  * certificate in front of it.
  *
  * This implementation is verified against the official RFC 6238 Appendix B
  * test vectors and cross-checked against an independent Python
- * implementation (app/crypto.py) for 25+ randomized cases -- both produce
+ * implementation (app/crypto.py) for 25+ randomized cases, and both produce
  * bit-identical output. See the project's development notes for details.
  */
 (function (global) {

@@ -57,7 +57,7 @@ fun RatatoskrTextField(
     )
 }
 
-/** The brass "primary action" button -- .btn-primary in style.css. */
+/** The brass "primary action" button, .btn-primary in style.css. */
 @Composable
 fun PrimaryButton(
     text: String,
@@ -80,7 +80,7 @@ fun PrimaryButton(
     }
 }
 
-/** A quiet, low-emphasis outline button -- .btn-ghost. */
+/** A quiet, low-emphasis outline button, .btn-ghost. */
 @Composable
 fun GhostButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     OutlinedButton(
@@ -95,7 +95,7 @@ fun GhostButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier
     }
 }
 
-/** A ghost button with danger-colored text -- .btn-caution, for actions
+/** A ghost button with danger-colored text, .btn-caution, for actions
  * that aren't destructive but deserve a second look (e.g. Export). */
 @Composable
 fun CautionButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
@@ -111,7 +111,7 @@ fun CautionButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
     }
 }
 
-/** The red outline "destructive action" button -- .btn-danger. */
+/** The red outline "destructive action" button, .btn-danger. */
 @Composable
 fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     OutlinedButton(
@@ -126,7 +126,7 @@ fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
     }
 }
 
-/** An underlined text-only link button -- .link-btn. */
+/** An underlined text-only link button, .link-btn. */
 @Composable
 fun LinkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     TextButton(onClick = onClick, modifier = modifier) {
@@ -134,7 +134,7 @@ fun LinkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier)
     }
 }
 
-/** Inline error text -- .error in style.css: reserves space so the layout
+/** Inline error text, .error in style.css: reserves space so the layout
  * doesn't jump when an error appears/disappears. */
 @Composable
 fun ErrorText(message: String?, modifier: Modifier = Modifier) {

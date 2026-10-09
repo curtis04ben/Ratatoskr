@@ -63,7 +63,7 @@ fun SetupScreen(appState: AppState) {
     AuthScreenShell(
         title = "Create the admin account",
         lede = "No vault found on this server yet. The first account you create becomes the Admin. " +
-            "Choose a master password -- it is never stored, and there is no reset link, so keep it somewhere safe.",
+            "Choose a master password. It is never stored, and there is no reset link, so keep it somewhere safe.",
     ) {
         RatatoskrTextField(username, { username = it }, "Username", Modifier.fillMaxWidth())
         RatatoskrTextField(password, { password = it }, "Master password", Modifier.fillMaxWidth().padding(top = 10.dp), isPassword = true)
@@ -157,7 +157,7 @@ fun AcceptInviteScreen(appState: AppState) {
 
     AuthScreenShell(
         title = "Join with an invite",
-        lede = "An admin gave you an invite code and a username. Choose your own master password now -- the admin never sees it.",
+        lede = "An admin gave you an invite code and a username. Choose your own master password now. The admin never sees it.",
     ) {
         RatatoskrTextField(username, { username = it }, "Username", Modifier.fillMaxWidth())
         RatatoskrTextField(inviteToken, { inviteToken = it }, "Invite code", Modifier.fillMaxWidth().padding(top = 10.dp))

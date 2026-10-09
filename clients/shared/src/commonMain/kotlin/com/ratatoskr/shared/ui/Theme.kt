@@ -44,8 +44,8 @@ private val RatatoskrColorScheme = darkColorScheme(
 
 @Composable
 fun RatatoskrTheme(content: @Composable () -> Unit) {
-    // isSystemInDarkTheme() is read but intentionally unused for branching --
-    // see the comment above; kept as a named call rather than removed so a
+    // isSystemInDarkTheme() is read but intentionally unused for branching.
+    // See the comment above; kept as a named call rather than removed so a
     // future light-theme decision has an obvious place to plug in.
     isSystemInDarkTheme()
     MaterialTheme(

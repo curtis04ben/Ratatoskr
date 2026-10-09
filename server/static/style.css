@@ -149,7 +149,7 @@ textarea { font-family: var(--font-sans); resize: vertical; }
 /* ---------- logo mark ----------
    The mark's artwork (a squirrel holding a padlock, from the supplied
    Draft_Logo.svg) carries its own per-path fill colors rather than
-   inheriting a single CSS-driven tone -- unlike the earlier abstract
+   inheriting a single CSS-driven tone. Unlike the earlier abstract
    spiral mark, this is a multi-tone illustration, so there's no single
    `fill` to hand off to CSS. .mark-lg/.mark-sm still fully control the
    rendered size via ordinary width/height, same as before; only the

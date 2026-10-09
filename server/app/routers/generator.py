@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/v1/generate", tags=["generate"])
 
 @router.post("", response_model=GenerateResponse)
 def generate(body: GenerateRequest, _session: Session = Depends(require_session)):
-    # Gated behind any logged-in session (visitors included -- generating a
+    # Gated behind any logged-in session (visitors included, since generating a
     # password touches no stored secrets) so the endpoint can't be hit
     # anonymously from the open network.
     password = crypto.generate_password(

@@ -65,8 +65,8 @@ fun ExportDialog(appState: AppState, files: PlatformFiles, onDismiss: () -> Unit
         CsvDialogCard("Export as CSV") {
             Text(
                 "This saves every password you can currently see as a plain, unencrypted file. " +
-                    "Anyone who can open it — on this device, in a cloud-synced folder, in an email " +
-                    "attachment, wherever it ends up — can read every password in it. Nothing about the " +
+                    "Anyone who can open it, on this device, in a cloud-synced folder, in an email " +
+                    "attachment, wherever it ends up, can read every password in it. Nothing about the " +
                     "encryption this app normally uses applies once the data leaves as CSV.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = RatatoskrColors.DangerBright,
@@ -75,7 +75,7 @@ fun ExportDialog(appState: AppState, files: PlatformFiles, onDismiss: () -> Unit
                 for (line in listOf(
                     "Delete the file once you're done with whatever you needed it for.",
                     "Don't leave it in a folder that auto-syncs to cloud storage.",
-                    "Don't email or message it to yourself as a way to move it between devices — use a direct transfer instead.",
+                    "Don't email or message it to yourself as a way to move it between devices. Use a direct transfer instead.",
                 )) {
                     Text("•  $line", style = MaterialTheme.typography.bodySmall, color = RatatoskrColors.TextMuted,
                         modifier = Modifier.padding(top = 4.dp))
@@ -110,7 +110,7 @@ fun ExportDialog(appState: AppState, files: PlatformFiles, onDismiss: () -> Unit
                                     // UTC date, same as the web UI's toISOString().slice(0, 10)
                                     val date = Clock.System.now().toString().take(10)
                                     if (files.saveCsvExport("ratatoskr-export-$date.csv", csv) != null) {
-                                        appState.notice = "Exported — remember to delete the file once you're done with it"
+                                        appState.notice = "Exported. Remember to delete the file once you're done with it"
                                         onDismiss()
                                     }
                                 }
@@ -128,7 +128,7 @@ fun ExportDialog(appState: AppState, files: PlatformFiles, onDismiss: () -> Unit
     }
 }
 
-/** The web UI's confirm() before importing -- import only ever adds. */
+/** The web UI's confirm() before importing. Import only ever adds. */
 @Composable
 fun ImportConfirmDialog(
     appState: AppState,

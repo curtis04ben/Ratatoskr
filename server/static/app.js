@@ -179,7 +179,7 @@
   // ---------- change master password ----------
   // The server re-wraps this account's private key under the new password
   // (entries and shares are untouched), signs out every other session for
-  // the account, and returns a fresh token for this one -- which has to
+  // the account, and returns a fresh token for this one, which has to
   // replace ours, since the old one is revoked along with the rest.
   $("open-password").addEventListener("click", () => {
     $("password-form").reset();
@@ -254,7 +254,7 @@
           <div class="row-user"></div>
         </div>`;
       li.querySelector(".row-site-text").textContent = entry.site;
-      li.querySelector(".row-user").textContent = entry.username || "\u2014";
+      li.querySelector(".row-user").textContent = entry.username || "";
       li.addEventListener("click", () => openEntryModal(entry));
       list.appendChild(li);
     }
@@ -383,7 +383,7 @@
       a.remove();
       URL.revokeObjectURL(url);
       hide($("export-modal"));
-      toast("Exported \u2014 remember to delete the file once you're done with it");
+      toast("Exported. Remember to delete the file once you're done with it");
     } catch (err) { $("export-error").textContent = err.message; }
   });
 
@@ -407,7 +407,7 @@
       if (!res.ok) throw new Error(data.detail || `Import failed (${res.status})`);
       let msg = `Imported ${data.imported} entr${data.imported === 1 ? "y" : "ies"}`;
       if (data.skipped) msg += `, skipped ${data.skipped} blank row${data.skipped === 1 ? "" : "s"}`;
-      if (data.errors && data.errors.length) msg += `, ${data.errors.length} error(s) \u2014 see console`;
+      if (data.errors && data.errors.length) msg += `, ${data.errors.length} error(s), see console`;
       toast(msg);
       if (data.errors && data.errors.length) console.warn("Import errors:", data.errors);
       await loadEntries();
@@ -422,7 +422,7 @@
     const totpEnabled = $("entry-2fa-enabled").checked;
     const totpSecret = totpEnabled ? $("entry-totp-secret").value.trim() : "";
     if (totpEnabled && !RatatoskrTOTP.isValidBase32(totpSecret)) {
-      $("entry-error").textContent = "That 2FA secret doesn't look valid \u2014 double check you copied the base32 key, not the 6-digit code.";
+      $("entry-error").textContent = "That 2FA secret doesn't look valid. Double check you copied the base32 key, not the 6-digit code.";
       return;
     }
     const body = {

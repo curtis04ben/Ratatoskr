@@ -18,7 +18,7 @@ import com.ratatoskr.shared.ui.RatatoskrApp
 import com.ratatoskr.shared.ui.RatatoskrColors
 
 /**
- * Android entry point -- the counterpart of desktop's Main.kt. All screens
+ * Android entry point, the counterpart of desktop's Main.kt. All screens
  * and logic are the shared RatatoskrApp; this supplies the Android pieces:
  * the Keystore session store, Storage Access Framework file pickers, the
  * app icon, and window setup.

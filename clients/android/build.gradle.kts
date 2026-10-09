@@ -14,11 +14,11 @@ val appVersionCode = appVersion.split(".").map(String::toInt).let { (major, mino
 }
 
 // Release signing comes from the environment (GitHub Actions secrets in CI,
-// see clients/README.md) -- the keystore never lives in the repo. Without
+// see clients/README.md). The keystore never lives in the repo. Without
 // it, assembleRelease still builds, just unsigned.
 val releaseKeystore = providers.environmentVariable("RATATOSKR_KEYSTORE_FILE").orNull
 fun signingEnv(name: String): String = providers.environmentVariable(name).orNull
-    ?: error("RATATOSKR_KEYSTORE_FILE is set but $name isn't -- set all four signing variables (clients/README.md)")
+    ?: error("RATATOSKR_KEYSTORE_FILE is set but $name isn't. Set all four signing variables (clients/README.md)")
 
 android {
     namespace = "com.ratatoskr.android"
@@ -51,7 +51,7 @@ android {
     buildTypes {
         release {
             // Not shrunk yet: Ktor and kotlinx.serialization need R8 keep
-            // rules tested on a real device first. Worth doing later -- it
+            // rules tested on a real device first. Worth doing later. It
             // would roughly halve the APK.
             isMinifyEnabled = false
             if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")

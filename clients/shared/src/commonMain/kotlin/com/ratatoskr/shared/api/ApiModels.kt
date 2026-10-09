@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
  * one-file diff to find here too, not a guessing game. Role is modeled
  * as a plain String (matching the server's `Role = str` type alias)
  * rather than a Kotlin enum, so an unrecognized future role value never
- * fails to deserialize -- see RoleLabels.kt for display-only handling.
+ * fails to deserialize. See RoleLabels.kt for display-only handling.
  */
 
 @Serializable
@@ -100,7 +100,7 @@ data class GenerateRequest(
 data class GenerateResponse(val password: String)
 
 /** The three roles the server currently defines, for display/UI purposes
- * only -- never used for (de)serialization, so a role the client doesn't
+ * only, never used for (de)serialization, so a role the client doesn't
  * know about yet still round-trips fine as a plain string. */
 object Roles {
     const val ADMIN = "admin"

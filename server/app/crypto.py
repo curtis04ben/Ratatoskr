@@ -11,7 +11,7 @@ account is created:
       password itself is never stored.
 
 Unlocking derives the Argon2id key, unwraps the private key, and holds it
-in server memory for the session -- exactly as the single-user version did
+in server memory for the session, exactly as the single-user version did
 for its one vault key, just per-user now.
 
 Sharing an entry between users doesn't require both people to be online at
@@ -20,12 +20,12 @@ HKDF + AES-GCM): anyone who knows a recipient's *public* key can encrypt a
 value that only that recipient's *private* key can open. Concretely, each
 entry has its own random `entry_key`; a copy of `entry_key` is sealed to
 every grantee's public key and stored alongside the entry. Revoking access
-just means deleting that grantee's sealed copy -- the entry's own
+just means deleting that grantee's sealed copy. The entry's own
 ciphertext never needs to be touched or re-encrypted.
 
 Changing your master password only re-wraps your private key under a new
 Argon2id key. Your X25519 keypair itself doesn't change, so every seal
-anyone has ever made to your public key stays valid -- nothing needs to be
+anyone has ever made to your public key stays valid, so nothing needs to be
 re-shared.
 """
 import base64
@@ -112,7 +112,7 @@ def _hkdf_key(shared_secret: bytes) -> bytes:
 
 def seal(plaintext: bytes, recipient_public_key: bytes) -> bytes:
     """Encrypt `plaintext` so only the holder of the matching private key
-    can decrypt it. The sender needs no key of their own -- an ephemeral
+    can decrypt it. The sender needs no key of their own. An ephemeral
     keypair is generated per call. Output layout: ephemeral_pubkey(32) ||
     nonce(12) || ciphertext."""
     eph_priv = X25519PrivateKey.generate()
@@ -157,7 +157,7 @@ def decrypt_entry(blob: bytes, entry_key: bytes) -> bytes:
 #
 # Verified against the official RFC 6238 Appendix B test vectors, and
 # against an independently hand-written JavaScript implementation used by
-# the web UI (both produce identical output for the same inputs -- see the
+# the web UI (both produce identical output for the same inputs; see the
 # project's test notes). Storing a totp_secret is entirely optional per
 # entry, since not every login needs 2FA.
 

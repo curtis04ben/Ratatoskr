@@ -13,7 +13,7 @@ kotlin {
         compileSdk = 37
         minSdk = 26
     }
-    // iosX64()/iosArm64()/iosSimulatorArm64() join here in Phase 6 --
+    // iosX64()/iosArm64()/iosSimulatorArm64() join here in Phase 6.
     // commonMain below is written to be ready for that without changes;
     // only per-target engine wiring (already isolated to each target's own
     // source set) needs adding.
@@ -43,7 +43,7 @@ kotlin {
         jvmMain {
             dependencies {
                 // CIO is a pure-Kotlin engine with no extra native
-                // dependency -- one less thing to go wrong across Linux/
+                // dependency, so one less thing to go wrong across Linux/
                 // Windows/macOS desktop builds versus OkHttp's platform
                 // quirks. Revisit only if a JVM-specific feature (e.g.
                 // fine-grained connection pooling control) is ever needed.

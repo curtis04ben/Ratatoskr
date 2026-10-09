@@ -28,7 +28,7 @@ import com.ratatoskr.shared.state.AppState
 import kotlinx.coroutines.launch
 
 /**
- * The very first screen a native client shows -- has no equivalent in the
+ * The very first screen a native client shows. It has no equivalent in the
  * web UI, which is always already pointed at one server by virtue of being
  * served from it. This is the piece unique to "enter a server address"
  * that every native client phase in the dev plan calls for.
@@ -68,7 +68,7 @@ fun ServerConnectScreen(appState: AppState, appIcon: Painter? = null) {
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(
-                "e.g. tempinfra.tail92211e.ts.net:8000 -- http:// is assumed if you don't specify",
+                "e.g. tempinfra.tail92211e.ts.net:8000. http:// is assumed if you don't specify",
                 style = MaterialTheme.typography.bodySmall,
                 color = RatatoskrColors.TextMuted,
                 modifier = Modifier.padding(top = 6.dp, bottom = 16.dp),

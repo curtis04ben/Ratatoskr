@@ -1,5 +1,5 @@
 # nfpm config for the Ratatoskr desktop client's .deb and .rpm.
-# Not run directly -- build-packages.sh stages the files and fills in the
+# Not run directly. build-packages.sh stages the files and fills in the
 # ${...} placeholders below. Both packages install the same layout:
 #   /opt/ratatoskr/                 self-contained app image (bundled JRE)
 #   /usr/bin/ratatoskr              symlink to the launcher

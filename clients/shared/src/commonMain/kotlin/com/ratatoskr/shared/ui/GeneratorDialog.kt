@@ -36,7 +36,7 @@ import com.ratatoskr.shared.api.GenerateRequest
 import com.ratatoskr.shared.state.AppState
 import kotlinx.coroutines.launch
 
-/** Standalone generator -- mirrors #generator-modal. When opened from an
+/** Standalone generator. Mirrors #generator-modal. When opened from an
  * entry's "Generate" button (rather than the header's standalone
  * "Generate" action), `onUse` fills the caller's password field instead of
  * just displaying a value to copy. */

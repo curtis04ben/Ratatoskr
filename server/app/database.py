@@ -341,7 +341,7 @@ def get_admin_seal(entry_id: str) -> bytes | None:
 
 
 def wipe_everything() -> None:
-    """Full factory reset -- the only 'forgot password' path when no admin
+    """Full factory reset, the only 'forgot password' path when no admin
     can log in to help. Deletes every user, entry, grant, and invite."""
     with get_conn() as conn:
         conn.execute("DELETE FROM entry_grants")

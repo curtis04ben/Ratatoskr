@@ -16,7 +16,7 @@ import org.jetbrains.skia.Image as SkiaImage
 import java.awt.Dimension
 
 /**
- * Desktop (Linux/Windows/macOS -- the one Compose Desktop module builds
+ * Desktop (Linux/Windows/macOS, since the one Compose Desktop module builds
  * installers for all three, see docs/development-plan.md) entry point.
  * All actual app logic and every screen live in :shared and are unchanged
  * here; this file's only job is the desktop-specific plumbing Compose
@@ -29,7 +29,7 @@ fun main() = application {
     val windowState = rememberWindowState(
         position = WindowPosition.Aligned(Alignment.Center),
         // Wide enough for the vault toolbar (search + Export/Import/New
-        // entry) with room to spare -- the web UI's vault column is 720px.
+        // entry) with room to spare. The web UI's vault column is 720px.
         size = DpSize(820.dp, 760.dp),
     )
 

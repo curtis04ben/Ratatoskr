@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 /** Matches the server's ChangePasswordRequest.new_password minimum. */
 private const val MIN_MASTER_PASSWORD_LENGTH = 8
 
-/** Change the signed-in account's master password -- mirrors the web UI's
+/** Change the signed-in account's master password. Mirrors the web UI's
  * #password-modal. The server re-wraps the account's private key under the
  * new password (entries and shares are untouched), signs out every other
  * session for the account, and hands this one a fresh token, which

@@ -2,7 +2,7 @@
 Sessions live in server memory only, never on disk. A session maps a random
 bearer token to one user's unwrapped private key (plus their admin recovery
 key, if they're an admin). Losing the process (container restart)
-invalidates every session -- correct behaviour, since none of these keys
+invalidates every session. That's correct behaviour, since none of these keys
 should outlive the process that unlocked them.
 """
 import secrets

@@ -9,7 +9,7 @@ import java.util.Properties
  * Remembers the last server between launches, so the app opens on Unlock
  * for that server instead of asking for its address every time.
  *
- * Only the server address is written -- never the session token. Keeping
+ * Only the server address is written, never the session token. Keeping
  * the token across launches needs an encrypted store (libsecret, the
  * system keyring, on Linux; Credential Manager on Windows; Keychain on
  * macOS), and a plain-text token on disk would be a real downgrade. So the

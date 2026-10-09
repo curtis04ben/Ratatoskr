@@ -13,7 +13,7 @@ import com.ratatoskr.shared.platform.SavedSession
 import com.ratatoskr.shared.platform.SessionStore
 
 /** Which top-level screen is showing. Mirrors the web UI's lock-screen
- * forms (setup/unlock/invite) and the main app screen -- see
+ * forms (setup/unlock/invite) and the main app screen. See
  * static/index.html for the equivalent web markup this maps to. */
 sealed class Screen {
     data object ServerConnect : Screen()
@@ -28,14 +28,14 @@ sealed class Screen {
  * Single state holder for the whole app, analogous to the web UI's `state`
  * object in app.js plus the screen-switching logic in boot(). Plain
  * Compose `mutableStateOf` properties rather than a platform-specific
- * ViewModel base class, deliberately -- this class lives in commonMain and
+ * ViewModel base class, deliberately. This class lives in commonMain and
  * needs to work unmodified on desktop, Android, and iOS. A platform's own
  * ViewModel wrapper (e.g. androidx.lifecycle.ViewModel on Android) can
  * hold and scope an instance of this later without this class needing to
  * change.
  *
  * `sessionStore`, when the platform supplies one, remembers the server and
- * session token across launches -- see restoreSession().
+ * session token across launches. See restoreSession().
  */
 class AppState(private val sessionStore: SessionStore? = null) {
     // With a saved server, start on the "connecting" screen rather than
@@ -52,7 +52,7 @@ class AppState(private val sessionStore: SessionStore? = null) {
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
-    /** Short-lived confirmation message -- the web UI's toast(). Shown
+    /** Short-lived confirmation message, the web UI's toast(). Shown
      * and auto-cleared by RatatoskrApp. */
     var notice by mutableStateOf<String?>(null)
 
@@ -61,8 +61,8 @@ class AppState(private val sessionStore: SessionStore? = null) {
     private fun requireClient(): RatatoskrApiClient =
         client ?: throw IllegalStateException("Not connected to a server yet")
 
-    /** Step 1: point the app at a server and see what it needs next --
-     * mirrors the web UI's boot() calling /auth/status before deciding
+    /** Step 1: point the app at a server and see what it needs next.
+     * Mirrors the web UI's boot() calling /auth/status before deciding
      * whether to show setup or unlock. */
     suspend fun connectToServer(url: String) {
         errorMessage = null
@@ -91,7 +91,7 @@ class AppState(private val sessionStore: SessionStore? = null) {
 
     /** Called once at launch: reconnects to the saved server and, if a
      * saved token is still accepted, goes straight to the vault. Otherwise
-     * it lands on Unlock for the same server -- including when the server
+     * it lands on Unlock for the same server, including when the server
      * can't be reached right now, so the user only ever re-enters their
      * credentials (unlocking retries the connection). The server-address
      * screen only appears via "Change server". */
@@ -238,7 +238,7 @@ class AppState(private val sessionStore: SessionStore? = null) {
         }
     }
 
-    /** Fetches the unencrypted CSV export -- mirrors the web UI's
+    /** Fetches the unencrypted CSV export. Mirrors the web UI's
      * export-confirm handler. Returns null (with errorMessage set) on
      * failure. */
     suspend fun exportCsv(): String? {
@@ -280,7 +280,7 @@ class AppState(private val sessionStore: SessionStore? = null) {
         try {
             client?.lock()
         } catch (_: Exception) {
-            // best-effort, same as the web UI's lock button -- still clear
+            // best-effort, same as the web UI's lock button. Still clear
             // local state below even if the network call fails
         }
         requireClient().token = null

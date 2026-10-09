@@ -17,7 +17,7 @@ import kotlin.time.Clock
  *
  * On an uninitialized server it runs setup as `e2e-admin`; on an
  * initialized one it unlocks with RATATOSKR_TEST_USER/RATATOSKR_TEST_PASSWORD.
- * Never point this at a real vault -- it creates and deletes entries.
+ * Never point this at a real vault. It creates and deletes entries.
  */
 class LiveServerTest {
     private val serverUrl = System.getenv("RATATOSKR_TEST_SERVER")

@@ -1,5 +1,5 @@
 // Root build file: only declares plugin versions for the modules below to
-// apply. No source lives here directly -- :shared holds the portable
+// apply. No source lives here directly. :shared holds the portable
 // Kotlin/Compose code, :desktop holds the JVM/desktop-specific entry point
 // and packaging config, :android the Android app. iOS joins this same
 // settings file as a sibling once that phase starts, without moving or

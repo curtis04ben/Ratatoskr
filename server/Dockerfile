@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 # argon2-cffi needs a C toolchain to build its wheel on some architectures;
 # gosu is how the entrypoint drops from root to the app's unprivileged user
-# after fixing /data's ownership (see docker-entrypoint.sh) -- it exists
+# after fixing /data's ownership (see docker-entrypoint.sh). It exists
 # specifically for this, and handles signal forwarding/PID 1 correctly in
 # a way plain `su`/`sudo` don't. Neither stays in the final image layer
 # beyond what apt itself needs.

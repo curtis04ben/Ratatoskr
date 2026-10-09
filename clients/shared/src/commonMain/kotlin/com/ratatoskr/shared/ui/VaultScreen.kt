@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 /** The main screen once unlocked: header (brand + role badge + lock),
  * search/export/import/new-entry toolbar, and the entry list. Mirrors
  * #app-screen in static/index.html. Sharing and the admin users panel are
- * intentionally not here yet -- deferred fast-follows per the client dev
+ * intentionally not here yet, deferred fast-follows per the client dev
  * plan, not an oversight. `onExport`/`onImport` are null when the platform
  * has no file picker wired up yet, which hides those buttons. `appIcon` is
  * the logo shown at the header's left, like the web UI's brand mark. */

@@ -12,7 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * CSV import/export through the Storage Access Framework -- the system
+ * CSV import/export through the Storage Access Framework, the system
  * file picker, so no storage permission is needed and the user chooses
  * exactly which file the app can touch. Must be constructed in the
  * activity's onCreate: activity-result launchers have to be registered

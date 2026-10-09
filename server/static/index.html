@@ -204,7 +204,7 @@
     <div id="status-loading" class="hint">Checking vault status&hellip;</div>
 
     <form id="setup-form" class="lock-form hidden" autocomplete="off">
-      <p class="form-lede">No vault found on this server yet. The first account you create here becomes the Admin. Choose a master password &mdash; it is never stored, and there is no reset link, so keep it somewhere safe.</p>
+      <p class="form-lede">No vault found on this server yet. The first account you create here becomes the Admin. Choose a master password. It is never stored, and there is no reset link, so keep it somewhere safe.</p>
       <label for="setup-username">Username</label>
       <input id="setup-username" type="text" minlength="2" required autocomplete="username">
       <label for="setup-password">Master password</label>
@@ -229,7 +229,7 @@
     </form>
 
     <form id="invite-form" class="lock-form hidden" autocomplete="off">
-      <p class="form-lede">An admin gave you an invite code and a username. Choose your own master password now &mdash; the admin never sees it.</p>
+      <p class="form-lede">An admin gave you an invite code and a username. Choose your own master password now. The admin never sees it.</p>
       <label for="invite-username">Username</label>
       <input id="invite-username" type="text" required autocomplete="username">
       <label for="invite-token">Invite code</label>
@@ -242,7 +242,7 @@
     </form>
 
     <form id="reset-form" class="lock-form hidden" autocomplete="off">
-      <p class="form-lede warn">Use this only if no admin account can unlock. There is no way to recover anyone's entries without their own master password &mdash; continuing permanently deletes every account and every saved entry, for everyone, and starts over.</p>
+      <p class="form-lede warn">Use this only if no admin account can unlock. There is no way to recover anyone's entries without their own master password. Continuing permanently deletes every account and every saved entry, for everyone, and starts over.</p>
       <button type="button" id="do-factory-reset" class="btn-danger">Wipe everything &amp; start over</button>
       <button type="button" id="cancel-reset" class="link-btn">Cancel</button>
       <p class="error" id="reset-error"></p>
@@ -278,7 +278,7 @@
     <button id="new-entry-btn" class="btn-primary hidden">+ New entry</button>
   </div>
 
-  <p id="empty-state" class="empty-state hidden">Nothing here yet. Entries you can see &mdash; your own, or ones shared with you &mdash; will appear as ledger rows.</p>
+  <p id="empty-state" class="empty-state hidden">Nothing here yet. Entries you can see, your own or ones shared with you, will appear as ledger rows.</p>
 
   <ol id="entry-list" class="ledger" aria-label="Saved entries"></ol>
 </div>
@@ -306,18 +306,18 @@
 
       <label class="inline-check totp-toggle">
         <input type="checkbox" id="entry-2fa-enabled">
-        This login uses 2FA (TOTP) &mdash; not every site needs this
+        This login uses 2FA (TOTP). Not every site needs this.
       </label>
 
       <div id="entry-2fa-fields" class="hidden">
         <label for="entry-totp-secret">2FA secret key</label>
         <input id="entry-totp-secret" type="text" placeholder="the base32 key from the site's 2FA setup screen" autocomplete="off">
         <p class="field-hint">
-          On the site's "enable 2FA" screen, look for "can't scan the QR code? enter this key manually"
-          &mdash; paste that key here, not the 6-digit code itself.
+          On the site's "enable 2FA" screen, look for "can't scan the QR code? enter this key manually".
+          Paste that key here, not the 6-digit code itself.
         </p>
         <div id="entry-totp-display" class="totp-display hidden">
-          <code id="entry-totp-code">&mdash;</code>
+          <code id="entry-totp-code"></code>
           <svg class="totp-ring" viewBox="0 0 36 36" aria-hidden="true">
             <circle class="totp-ring-track" cx="18" cy="18" r="15.5"/>
             <circle id="entry-totp-ring-progress" class="totp-ring-progress" cx="18" cy="18" r="15.5"/>
@@ -373,14 +373,14 @@
       <input id="invite-new-username" type="text" required>
       <label for="invite-new-role">Role</label>
       <select id="invite-new-role">
-        <option value="user">User &mdash; own passwords, read/write</option>
-        <option value="visitor">Visitor &mdash; read-only, only what's shared</option>
-        <option value="admin">Admin &mdash; full access, for maintenance</option>
+        <option value="user">User (own passwords, read/write)</option>
+        <option value="visitor">Visitor (read-only, only what's shared)</option>
+        <option value="admin">Admin (full access, for maintenance)</option>
       </select>
       <button type="submit" class="btn-primary">Create invite</button>
     </form>
     <div id="invite-result" class="invite-result hidden">
-      <p>Give this code and the username to the invitee &mdash; it's shown once and won't be stored anywhere recoverable:</p>
+      <p>Give this code and the username to the invitee. It's shown once and won't be stored anywhere recoverable:</p>
       <code id="invite-result-token"></code>
     </div>
     <p class="error" id="users-error"></p>
@@ -398,14 +398,14 @@
     <h2>Export as CSV</h2>
     <p class="form-lede warn">
       This downloads every password you can currently see as a <strong>plain, unencrypted file</strong>.
-      Anyone who can open it &mdash; on this device, in a cloud-synced Downloads folder, in an email
-      attachment, wherever it ends up &mdash; can read every password in it. Nothing about the encryption
+      Anyone who can open it, on this device, in a cloud-synced Downloads folder, in an email
+      attachment, wherever it ends up, can read every password in it. Nothing about the encryption
       this app normally uses applies once the data leaves as CSV.
     </p>
     <ul class="warn-list">
       <li>Delete the file once you're done with whatever you needed it for.</li>
       <li>Don't leave it in a folder that auto-syncs to cloud storage.</li>
-      <li>Don't email or message it to yourself as a way to move it between devices &mdash; use a direct transfer instead.</li>
+      <li>Don't email or message it to yourself as a way to move it between devices. Use a direct transfer instead.</li>
     </ul>
     <label class="inline-check export-ack">
       <input type="checkbox" id="export-ack-checkbox">

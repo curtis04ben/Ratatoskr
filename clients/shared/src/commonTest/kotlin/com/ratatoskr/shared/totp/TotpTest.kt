@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
  * Official RFC 6238 Appendix B test vectors (the SHA-1 row), plus the same
  * cross-checks already run against the server's Python implementation and
  * the web UI's JavaScript implementation during development. This file
- * was NOT executed by the assistant that wrote it -- no network access to
+ * was NOT executed by the assistant that wrote it, which had no network access to
  * fetch Gradle/Kotlin/Compose dependencies in that environment. The logic
  * itself WAS hand-verified (every magic constant checked arithmetically,
  * and the full algorithm transliterated into Python and run against these
@@ -65,7 +65,7 @@ class TotpTest {
     @Test
     fun valid_base32_is_accepted() {
         assertTrue(Totp.isValidBase32(rfcSeed))
-        assertTrue(Totp.isValidBase32("jbswy3dpehpk3pxp")) // lowercase, unpadded -- as users will paste it
+        assertTrue(Totp.isValidBase32("jbswy3dpehpk3pxp")) // lowercase, unpadded, as users will paste it
     }
 
     @Test
@@ -76,7 +76,7 @@ class TotpTest {
     }
 
     // Verdicts taken from running the server's is_valid_totp_secret
-    // (app/crypto.py) on the same inputs -- the server is what accepts or
+    // (app/crypto.py) on the same inputs. The server is what accepts or
     // rejects a secret on save, so the client must agree with it.
     @Test
     fun base32_validation_matches_server() {

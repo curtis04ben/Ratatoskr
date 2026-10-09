@@ -4,7 +4,7 @@ import kotlin.time.Clock
 
 /**
  * Pure-Kotlin TOTP (RFC 6238), deliberately not using any platform crypto
- * API (javax.crypto on JVM, CryptoKit on iOS, etc.) -- this file lives in
+ * API (javax.crypto on JVM, CryptoKit on iOS, etc.). This file lives in
  * commonMain and needs to produce byte-identical output on every target
  * without expect/actual platform wiring. This is the third independent
  * implementation of the same algorithm in this project: the server has
@@ -14,7 +14,7 @@ import kotlin.time.Clock
  * structure line-for-line where the languages allow, specifically so it's
  * easy to audit against the other two rather than trusting a fresh
  * translation. See RatatoskrClientsTest.kt in commonTest for the same
- * vectors applied here -- run `./gradlew :shared:test` to check.
+ * vectors applied here. Run `./gradlew :shared:test` to check.
  */
 object Totp {
 

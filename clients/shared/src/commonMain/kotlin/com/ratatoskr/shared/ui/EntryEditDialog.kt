@@ -41,7 +41,7 @@ import com.ratatoskr.shared.totp.Totp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Create/edit dialog -- mirrors #entry-modal in static/index.html,
+/** Create/edit dialog. Mirrors #entry-modal in static/index.html,
  * including the "This login uses 2FA" toggle and the live-updating code
  * with countdown ring (static/totp.js's tickTotpDisplay, reimplemented
  * here in Kotlin against the same Totp.code()/secondsRemaining() shared
@@ -110,7 +110,7 @@ fun EntryEditDialog(
                         colors = CheckboxDefaults.colors(checkedColor = RatatoskrColors.Brass),
                     )
                     Text(
-                        "This login uses 2FA -- not every site needs this",
+                        "This login uses 2FA (not every site needs this)",
                         style = MaterialTheme.typography.bodySmall,
                         color = RatatoskrColors.Text,
                     )
@@ -126,7 +126,7 @@ fun EntryEditDialog(
                         Modifier.fillMaxWidth().padding(top = 8.dp),
                     )
                     Text(
-                        "On the site's \"enable 2FA\" screen, look for \"can't scan the QR code? enter this key manually\" -- " +
+                        "On the site's \"enable 2FA\" screen, look for \"can't scan the QR code? enter this key manually\". " +
                             "paste that key here, not the 6-digit code itself.",
                         style = MaterialTheme.typography.bodySmall,
                         color = RatatoskrColors.TextMuted,
@@ -169,7 +169,7 @@ fun EntryEditDialog(
                         enabled = site.isNotBlank() && !isSaving,
                         onClick = {
                             if (totpEnabled && totpSecret.isNotBlank() && !Totp.isValidBase32(totpSecret)) {
-                                localError = "That 2FA secret doesn't look valid -- double check you copied the base32 key, not the 6-digit code."
+                                localError = "That 2FA secret doesn't look valid. Double check you copied the base32 key, not the 6-digit code."
                                 return@PrimaryButton
                             }
                             localError = null
@@ -194,7 +194,7 @@ fun EntryEditDialog(
     }
 }
 
-/** Live-updating 6-digit code + countdown ring, ticking every second --
+/** Live-updating 6-digit code + countdown ring, ticking every second,
  * the Compose equivalent of static/totp.js's tickTotpDisplay/setInterval,
  * using LaunchedEffect as the idiomatic Compose replacement for a raw
  * timer loop tied to this composable's lifecycle (it's cancelled

@@ -21,12 +21,12 @@ CSV_FIELDS = ["site", "username", "password", "totp_secret", "url", "notes"]
 # format. Matched case-insensitively after stripping whitespace.
 #
 # Firefox's own export (Settings -> Passwords -> "Export Logins") has no
-# site/name/title column at all -- just url, username, password, plus a
+# site/name/title column at all, just url, username, password, plus a
 # few fields we don't use (httpRealm, formActionOrigin, guid,
 # timeCreated, timeLastUsed, timePasswordChanged). Rather than special-
 # casing "is this a Firefox file?", the importer falls back to deriving
 # the site name from the URL's hostname whenever there's no explicit site
-# column but there IS a url column -- this handles Firefox's export (and
+# column but there IS a url column. This handles Firefox's export (and
 # any other tool with the same gap) without a brittle format sniff.
 _HEADER_SYNONYMS = {
     "site": {"site", "name", "title", "service"},
@@ -40,7 +40,7 @@ _HEADER_SYNONYMS = {
 
 def _site_from_url(url: str) -> str:
     """Best-effort hostname extraction for rows with no explicit site name.
-    Never raises -- falls back to the raw URL string if it can't be parsed,
+    Never raises. Falls back to the raw URL string if it can't be parsed,
     so a malformed or scheme-less URL still produces *some* usable site
     name rather than causing the whole row to be skipped."""
     url = url.strip()
@@ -48,7 +48,7 @@ def _site_from_url(url: str) -> str:
         return ""
     parsed = urlparse(url)
     if not parsed.hostname:
-        # No scheme (e.g. "example.com" instead of "https://example.com") --
+        # No scheme (e.g. "example.com" instead of "https://example.com"),
         # urlparse treats that as a bare path with no netloc. Retry with an
         # assumed scheme before giving up.
         parsed = urlparse("https://" + url)
@@ -123,7 +123,7 @@ def _validate_entry_body(body: EntryIn) -> None:
     if body.totp_secret and not crypto.is_valid_totp_secret(body.totp_secret):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            "That doesn't look like a valid 2FA secret -- it should be the base32 code "
+            "That doesn't look like a valid 2FA secret. It should be the base32 code "
             "(the \"can't scan the QR code? enter this key instead\" text) from the site's "
             "2FA setup screen, not the 6-digit code itself.",
         )
@@ -157,7 +157,7 @@ def _load_writable_entry(entry_id: str, session: Session):
 
 def _load_readable_entry(entry_id: str, session: Session):
     """Like _load_writable_entry, but for anyone who can merely see the
-    entry (any grant, or an admin via the recovery path) -- used for
+    entry (any grant, or an admin via the recovery path), used for
     endpoints that don't modify anything, like reading the current TOTP
     code."""
     entry = database.get_entry(entry_id)
@@ -195,7 +195,7 @@ def get_totp_code(entry_id: str, session: Session = Depends(require_session)):
     browser extension or native app) that would rather call this than
     reimplement HMAC-SHA1/TOTP themselves. The web UI computes this
     client-side instead (see totp.js) purely so the code can live-update
-    every second without a network round trip -- both use the identical
+    every second without a network round trip. Both use the identical
     RFC 6238 algorithm, just in two languages."""
     _entry, entry_key = _load_readable_entry(entry_id, session)
     row = database.get_entry(entry_id)
@@ -263,13 +263,13 @@ def unshare_entry(entry_id: str, username: str, session: Session = Depends(requi
 # Both directions handle plaintext: an exported file is every visible
 # password sitting unencrypted on whatever device downloads it, and an
 # import reads plaintext passwords from a file the user supplies. Neither
-# side of this touches the encryption model for anything already stored --
-# it only exists at the boundary where data enters or leaves the vault.
+# side of this touches the encryption model for anything already stored.
+# It only exists at the boundary where data enters or leaves the vault.
 
 @router.get("/export")
 def export_csv(session: Session = Depends(require_session)):
     """Exports every entry visible to the current session (their own,
-    anything shared with them, or -- for admins -- everything) as CSV.
+    anything shared with them, or, for admins, everything) as CSV.
     Read-only for visitors is not relevant here since export never writes."""
     entries = list_entries(session)  # reuses the same visibility logic as GET /vault
 
@@ -329,7 +329,7 @@ async def import_csv(file: UploadFile, session: Session = Depends(require_writer
     if not has_site_column and not has_url_column:
         # A genuinely valid CSV, just not one Ratatoskr (or any format it
         # knows how to read, like Chrome/Bitwarden/Firefox exports) can
-        # make sense of -- distinct from a malformed-file error above.
+        # make sense of, distinct from a malformed-file error above.
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             "This CSV has a header row, but none of its columns look like a site name or URL "
@@ -360,15 +360,15 @@ async def import_csv(file: UploadFile, session: Session = Depends(require_writer
                 notes=values.get("notes", ""),
             )
             if body.totp_secret and not crypto.is_valid_totp_secret(body.totp_secret):
-                # Don't hard-fail the whole row over an unusable 2FA secret --
-                # import everything else and flag it so the person can fix it
+                # Don't hard-fail the whole row over an unusable 2FA secret.
+                # Import everything else and flag it so the person can fix it
                 # by hand afterward. (Never logs the secret itself.)
                 errors.append(f"Row {row_num}: 2FA secret for \"{site}\" wasn't valid base32, imported without it")
                 body.totp_secret = ""
             _persist_new_entry(body, session)
             imported += 1
-        except Exception as exc:  # noqa: BLE001 -- surfaced to the caller, not swallowed
-            # Deliberately not including field values in this message --
+        except Exception as exc:  # noqa: BLE001 (surfaced to the caller, not swallowed)
+            # Deliberately not including field values in this message,
             # only the row number and the validation error itself, so a
             # bad row can be diagnosed without echoing back a password.
             errors.append(f"Row {row_num}: {exc}")

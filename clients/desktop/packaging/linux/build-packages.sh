@@ -9,7 +9,7 @@
 # All three carry the same app image, .desktop entry, icons and AppStream
 # metadata from this directory. Output goes to desktop/build/linux-packages/
 # (override with OUT_DIR). Needs nfpm and appimagetool on PATH, or pointed
-# to by $NFPM / $APPIMAGETOOL -- see clients/README.md.
+# to by $NFPM / $APPIMAGETOOL. See clients/README.md.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -26,7 +26,7 @@ RELEASE_DATE="$(git -C "$CLIENTS" log -1 --format=%cs 2>/dev/null || date -u +%F
 
 IMAGE="$CLIENTS/desktop/build/compose/binaries/main/app/Ratatoskr"
 [ -x "$IMAGE/bin/Ratatoskr" ] || {
-    echo "No app image at $IMAGE -- run ./gradlew :desktop:createDistributable first" >&2
+    echo "No app image at $IMAGE. Run ./gradlew :desktop:createDistributable first" >&2
     exit 1
 }
 

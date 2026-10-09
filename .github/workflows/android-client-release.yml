@@ -5,7 +5,7 @@
 #     -> tests, builds + signs the APK, creates release "Ratatoskr Android v0.1.0"
 #
 # Signing needs four repository secrets (Settings -> Secrets and variables
-# -> Actions) -- see clients/README.md for how to create the keystore:
+# -> Actions). See clients/README.md for how to create the keystore:
 #   RATATOSKR_KEYSTORE_BASE64   base64 of the .jks file
 #   RATATOSKR_KEYSTORE_PASSWORD
 #   RATATOSKR_KEY_ALIAS
@@ -61,7 +61,7 @@ jobs:
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
             if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-              echo "::error::RATATOSKR_KEYSTORE_BASE64 secret isn't set -- refusing to release an unsigned APK"
+              echo "::error::RATATOSKR_KEYSTORE_BASE64 secret isn't set. Refusing to release an unsigned APK"
               exit 1
             fi
             echo "::warning::No signing secrets; building an unsigned APK"
@@ -138,17 +138,17 @@ jobs:
         run: |
           cert="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/certs.txt")"
           cat > "$RUNNER_TEMP/notes.md" <<EOF
-          Ratatoskr for Android (8.0 and newer). Connects to your own Ratatoskr server -- the server itself isn't part of this release; see server/README.md.
+          Ratatoskr for Android (8.0 and newer). Connects to your own Ratatoskr server. The server itself isn't part of this release; see server/README.md.
 
           ## Install
 
           1. On your phone, download \`Ratatoskr-${VERSION}.apk\` below.
-          2. Open it. Android will ask you to allow installs from your browser or file manager ("Install unknown apps") -- allow it for that app.
+          2. Open it. Android will ask you to allow installs from your browser or file manager ("Install unknown apps"). Allow it for that app.
           3. Tap **Install**. Ratatoskr appears in your app drawer.
 
           Updating: install a newer APK the same way; your saved server carries over.
 
-          Verify the download with \`sha256sum -c SHA256SUMS\`. Signing certificate SHA-256: \`${cert}\` -- every release is signed with this same key, and Android refuses an update signed by any other.
+          Verify the download with \`sha256sum -c SHA256SUMS\`. Signing certificate SHA-256: \`${cert}\`. Every release is signed with this same key, and Android refuses an update signed by any other.
           EOF
           gh release create "$GITHUB_REF_NAME" \
             --repo "$GITHUB_REPOSITORY" \

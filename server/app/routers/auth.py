@@ -46,7 +46,7 @@ def setup(body: SetupRequest):
     generates the tree-wide admin-recovery keypair described in crypto.py,
     sealing its private half to this founding admin."""
     if database.any_users_exist():
-        raise HTTPException(status.HTTP_409_CONFLICT, "Already set up -- use /unlock or an invite")
+        raise HTTPException(status.HTTP_409_CONFLICT, "Already set up. Use /unlock or an invite")
 
     salt = crypto.new_salt()
     kek = crypto.derive_kek(body.master_password, salt)
@@ -70,7 +70,7 @@ def unlock(body: UnlockRequest):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Not set up yet")
     user = database.get_user_by_username(body.username)
     if user is None:
-        # Same error as a wrong password -- don't reveal whether the
+        # Same error as a wrong password, so we don't reveal whether the
         # username exists.
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect username or master password")
 
@@ -123,7 +123,7 @@ def change_password(body: ChangePasswordRequest, session: Session = Depends(requ
     except crypto.WrongPassword:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect current password")
 
-    # Only the wrapping changes -- the X25519 keypair itself is untouched,
+    # Only the wrapping changes. The X25519 keypair itself is untouched,
     # so every seal anyone has made to this user's public key (their own
     # entries, shares from others, admin-recovery grant) stays valid.
     new_salt = crypto.new_salt()

@@ -12,7 +12,7 @@ SESSION_IDLE_TIMEOUT = int(os.environ.get("RATATOSKR_SESSION_TIMEOUT", "1800"))
 # How long an admin-issued invite stays redeemable (seconds). Default 7 days.
 INVITE_EXPIRY_SECONDS = int(os.environ.get("RATATOSKR_INVITE_EXPIRY", str(7 * 24 * 3600)))
 
-# Comma-separated list of extra origins allowed to call the API -- for a
+# Comma-separated list of extra origins allowed to call the API, for a
 # future browser extension, which runs from its own chrome-extension:// /
 # moz-extension:// origin rather than the page you're viewing.
 EXTRA_CORS_ORIGINS = [

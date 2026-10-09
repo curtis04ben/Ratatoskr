@@ -1,5 +1,5 @@
 # Builds the Linux desktop client packages and publishes them as a GitHub
-# Release of their own -- separate from any server release, following the
+# Release of their own, separate from any server release, following the
 # per-component tag scheme in docs/development-plan.md.
 #
 #   git tag linux-v0.1.0 && git push origin linux-v0.1.0
@@ -86,7 +86,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           cat > "$RUNNER_TEMP/notes.md" <<EOF
-          Ratatoskr desktop client for Linux (x86_64). Connects to your own Ratatoskr server -- the server itself isn't part of this release; see server/README.md.
+          Ratatoskr desktop client for Linux (x86_64). Connects to your own Ratatoskr server. The server itself isn't part of this release; see server/README.md.
 
           ## Which file?
 
@@ -96,7 +96,7 @@ jobs:
           | Debian / Ubuntu / Mint | \`ratatoskr_${VERSION}_amd64.deb\` | \`sudo apt install ./ratatoskr_${VERSION}_amd64.deb\` |
           | Anything else, or no install | \`Ratatoskr-x86_64.AppImage\` | \`chmod +x Ratatoskr-x86_64.AppImage\` then run it |
 
-          The .rpm and .deb add Ratatoskr to your application launcher (search "Ratatoskr"). An AppImage runs without installing but doesn't add a launcher entry by itself -- use Gear Lever or AppImageLauncher for that.
+          The .rpm and .deb add Ratatoskr to your application launcher (search "Ratatoskr"). An AppImage runs without installing but doesn't add a launcher entry by itself. Use Gear Lever or AppImageLauncher for that.
 
           No system Java needed: a Java runtime is bundled. Verify downloads with \`sha256sum -c SHA256SUMS\`.
           EOF

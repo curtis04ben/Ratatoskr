@@ -18,7 +18,7 @@ import javax.crypto.spec.GCMParameterSpec
  * encrypted with AES-256-GCM under a key generated inside the Keystore
  * (hardware-backed where the device supports it) that can't be exported,
  * then kept in private SharedPreferences. The server address is stored as
- * plain text -- it isn't secret.
+ * plain text. It isn't secret.
  *
  * Deliberately not androidx.security's EncryptedSharedPreferences: that
  * library is deprecated, and this is the same scheme without the extra

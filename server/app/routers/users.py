@@ -26,7 +26,7 @@ def invite_user(body: InviteRequest, _admin: Session = Depends(require_admin)):
 
     token = crypto.new_invite_token()
     database.create_invite(body.username, body.role, token)
-    # The token is only ever returned here, once -- hand it to the invitee
+    # The token is only ever returned here, once. Hand it to the invitee
     # out of band (in person, chat, whatever you'd trust with a temporary
     # code). Nothing about it is stored in recoverable form.
     return InviteResponse(username=body.username, role=body.role, token=token, expires_in=INVITE_EXPIRY_SECONDS)
@@ -51,8 +51,8 @@ def update_role(user_id: str, body: RoleUpdateRequest, admin: Session = Depends(
         if admin.admin_recovery_private_key is None:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                "Your own admin session doesn't hold the recovery key (corrupt grant) -- "
-                "ask another admin to perform this promotion instead.",
+                "Your own admin session doesn't hold the recovery key (corrupt grant). "
+                "Ask another admin to perform this promotion instead.",
             )
         sealed = crypto.seal(admin.admin_recovery_private_key, target["public_key"])
         database.set_admin_recovery_grant(user_id, sealed)
@@ -76,7 +76,7 @@ def delete_user(user_id: str, admin: Session = Depends(require_admin)):
     # Cascades to their entries (and everyone else's grants on those
     # entries), their own grants on other people's entries, and their
     # admin-recovery grant if they had one. Entries only they could write
-    # are genuinely gone -- there is no way around that for a system with
+    # are genuinely gone. There is no way around that for a system with
     # no plaintext-recoverable backups by design.
     database.delete_user(user_id)
     sessions.destroy_all_for_user(user_id)

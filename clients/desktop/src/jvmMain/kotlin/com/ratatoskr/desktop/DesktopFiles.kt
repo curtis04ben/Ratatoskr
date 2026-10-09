@@ -12,7 +12,7 @@ import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermissions
 
 /**
- * PlatformFiles for desktop, using AWT's FileDialog -- on Linux that's
+ * PlatformFiles for desktop, using AWT's FileDialog. On Linux that's
  * the native GTK file chooser, and the platform-native dialog on Windows
  * and macOS too, rather than Swing's JFileChooser look.
  */

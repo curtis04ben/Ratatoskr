@@ -9,10 +9,10 @@ class SavedSession(val serverUrl: String, val token: String?)
  * left off. Android needs this most: the OS routinely kills backgrounded
  * apps, and without it every return to the app would mean re-entering the
  * server address and master password. The server's idle timeout still
- * applies -- a restored token that has expired just lands on Unlock.
+ * applies. A restored token that has expired just lands on Unlock.
  *
  * Implementations must store the token encrypted (Android: a Keystore
- * key) or not at all -- the desktop store keeps only the server address
+ * key) or not at all. The desktop store keeps only the server address
  * until it has the system keyring to put the token in. The master
  * password is never passed here. Supplied by each platform's entry point,
  * like PlatformFiles; without one, nothing persists.

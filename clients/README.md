@@ -76,7 +76,7 @@ ls desktop/build/linux-packages/
 All in `desktop/packaging/linux/`, installed by the `.deb`/`.rpm` (and
 embedded in the AppImage):
 
-- **App ID** `io.github.curtis04ben.Ratatoskr` -- the reverse-DNS of the
+- **App ID** `io.github.curtis04ben.Ratatoskr`, the reverse-DNS of the
   GitHub Pages domain the project controls. It names the `.desktop` file,
   the icon and the AppStream metadata. Don't change it once released:
   launchers, pinned favourites and software centres key on it.
@@ -95,7 +95,7 @@ one-line `settings.properties` in `~/.config/ratatoskr/`, `%APPDATA%\Ratatoskr`
 or `~/Library/Application Support/Ratatoskr`), so it opens on Unlock for
 that server. It deliberately never writes the session token: keeping you
 signed in across launches needs an encrypted store, which on Linux means
-libsecret (the system keyring) — the desktop counterpart of Android's
+libsecret (the system keyring), the desktop counterpart of Android's
 `KeystoreSessionStore`, plugged into the same shared `SessionStore`
 interface. Until then, the master password is asked for on each launch.
 
@@ -134,17 +134,17 @@ a workflow artifact without releasing anything.
 `android/` is a thin Android app around the same shared screens. What's
 Android-specific:
 
-- **`MainActivity`** -- entry point. Sets `FLAG_SECURE` (no screenshots,
+- **`MainActivity`**: entry point. Sets `FLAG_SECURE` (no screenshots,
   screen recording or recent-apps preview of the vault) and draws
   edge-to-edge with content padded clear of system bars and the keyboard.
-- **`KeystoreSessionStore`** -- remembers the server and session token
+- **`KeystoreSessionStore`**: remembers the server and session token
   across launches, since Android kills backgrounded apps freely. The token
   is AES-256-GCM encrypted under a non-exportable Android Keystore key;
   the master password is never stored. (`EncryptedSharedPreferences` is
   deprecated, so this uses the Keystore directly.) Excluded from backups.
-- **`AndroidFiles`** -- CSV import/export via the system file picker, so
+- **`AndroidFiles`**: CSV import/export via the system file picker, so
   no storage permission is needed.
-- **Manifest** -- `INTERNET` is the only permission. Plain `http://` is
+- **Manifest**: `INTERNET` is the only permission. Plain `http://` is
   allowed because home servers usually don't have TLS; the connect screen
   warns when the address isn't `https://`.
 

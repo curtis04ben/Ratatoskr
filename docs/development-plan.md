@@ -3,7 +3,7 @@
 This documents the architecture decisions behind the multi-client Ratatoskr
 project and the planned approach for each native client. It's meant as
 durable context for whoever (human or AI assistant) picks up client work
-next — not a rigid spec, more a record of *why* things are shaped the way
+next. It's not a rigid spec, more a record of *why* things are shaped the way
 they are, so that reasoning doesn't have to be reconstructed from scratch
 each time.
 
@@ -16,9 +16,9 @@ each time.
 | Server + web UI | 2.4.0 | none (deployed from source) | `server/app/main.py` holds the version |
 | Linux app | 0.1.3 | `linux-v0.1.3` | `ratatoskrDesktopVersion` in `clients/gradle.properties` |
 | Android app | 0.1.2 | `android-v0.1.2` | `ratatoskrAndroidVersion`; release key + 4 GitHub secrets in place |
-| Windows / macOS | — | — | Phases 4/5 below: packaging on the same `desktop/` module |
-| Android biometric unlock | — | — | Phase 3.1 below |
-| Android Autofill | — | — | Phase 3.2 below |
+| Windows / macOS | not yet | not yet | Phases 4/5 below: packaging on the same `desktop/` module |
+| Android biometric unlock | not yet | not yet | Phase 3.1 below |
+| Android Autofill | not yet | not yet | Phase 3.2 below |
 
 Both native apps cover: connect (server remembered), setup, unlock,
 accept-invite, entry list/search/create/edit/delete, live TOTP, password
@@ -141,7 +141,7 @@ Ratatoskr/
 ├── server/          Python/FastAPI backend + web UI (the original project)
 ├── clients/         Kotlin Multiplatform + Compose Multiplatform monorepo
 │   ├── shared/       portable API client, models, TOTP, app state, UI screens
-│   ├── desktop/      JVM/Compose Desktop entry point — builds Linux, Windows, AND macOS
+│   ├── desktop/      JVM/Compose Desktop entry point, builds Linux, Windows, AND macOS
 │   └── android/      Android app module (AGP 9 requires it separate from shared/)
 ├── shared/assets/    master branding (logo SVG) that every client/platform icon derives from
 ├── docs/             this file, plus anything else durable
@@ -154,7 +154,7 @@ solo with AI assistants: a client change and the API change it depends on
 can land in one PR, and an assistant editing a client can read the real
 `server/app/schemas.py` directly instead of working from a secondhand
 description. Revisit only if a specific client's build tooling genuinely
-conflicts with the others (CI minutes, SDK bloat) — not preemptively.
+conflicts with the others (CI minutes, SDK bloat), not preemptively.
 
 **Independent versioning per component**, not one repo-wide tag. The
 server is mature; a first client starts at 0.1.0. Tags in use:
@@ -163,8 +163,8 @@ server is mature; a first client starts at 0.1.0. Tags in use:
 from source; a `server-vX.Y.Z` tag would follow the same pattern if it
 ever gets released builds (e.g. a published Docker image).
 
-**`server/` nesting** happened together with adding `clients/`, not before
-— moving it earlier would have broken every already-documented deployment
+**`server/` nesting** happened together with adding `clients/`, not before.
+Moving it earlier would have broken every already-documented deployment
 path (TrueNAS, CasaOS) for zero benefit until there was a second thing in
 the repo to justify the split.
 
@@ -175,11 +175,11 @@ whole point of a *native* client, as the person who owns this project put
 it, is defeated by wrapping a web view. Chosen over Flutter/native-per-
 platform because Compose Multiplatform is genuinely first-class on both
 Android (the very next phase after Linux) and Desktop (Linux/Windows/
-macOS) via the JVM — meaning most UI code gets written once and reused,
+macOS) via the JVM, meaning most UI code gets written once and reused,
 rather than five platform efforts happening independently.
 
 **Consequence worth being explicit about**: `clients/desktop` is *one*
-module that produces installers for Linux, Windows, and macOS — not three
+module that produces installers for Linux, Windows, and macOS, not three
 separate client efforts. Phase 2 ("build the Linux client") is really
 "build the desktop app"; Phases 4 and 5 are mostly packaging and
 platform-glue work on an app that already exists, not new app-building
@@ -198,13 +198,13 @@ Keychain on iOS/macOS, Credential Manager/DPAPI on Windows, libsecret on
 Linux), and each platform's own app entry point / window chrome.
 
 **API definitions**: not a hand-maintained shared schema file. The
-server's FastAPI already generates a live OpenAPI spec at `/openapi.json`
-— that's the real contract. `clients/shared`'s Kotlin models are currently
+server's FastAPI already generates a live OpenAPI spec at `/openapi.json`.
+That's the real contract. `clients/shared`'s Kotlin models are currently
 hand-written against the real `server/app/schemas.py` (accurate as of
 this writing, small enough surface that hand-matching is less overhead
 than a codegen dependency for one client). Worth switching to generating
 Kotlin bindings from the live OpenAPI spec once there are several clients
-all needing to stay in sync — not worth it yet for one.
+all needing to stay in sync. It's not worth it yet for one.
 
 ## Client-side crypto: there currently isn't any (beyond TOTP)
 
@@ -212,37 +212,37 @@ Worth stating plainly since it's easy to assume otherwise given how much
 cryptographic engineering went into the server: the server derives the
 Argon2id key and decrypts entries server-side; the API returns
 already-decrypted data to an authenticated session. A native client is
-therefore a thin REST client, same as the web UI — it does not need to
+therefore a thin REST client, same as the web UI. It does not need to
 reimplement Argon2id/X25519 sealing in Kotlin.
 
-The one piece of real crypto in `clients/shared` is `Totp.kt` — a
+The one piece of real crypto in `clients/shared` is `Totp.kt`, a
 hand-written, pure-Kotlin RFC 6238 implementation, deliberately not using
 any platform crypto API (`javax.crypto` on JVM, CryptoKit on iOS, etc.),
 so it produces identical output on every target without per-platform
 wiring. This is the third independent implementation of the same
 algorithm in this project (server: Python, web UI: JavaScript, clients:
-Kotlin) — all three were checked against the official RFC 6238 Appendix B
+Kotlin). All three were checked against the official RFC 6238 Appendix B
 test vectors and against each other during development.
 
 If true end-to-end zero-knowledge (server never sees the master password,
 only pre-encrypted blobs) is ever wanted, that's a materially bigger
 redesign than anything in this document, deserving its own deliberate
-decision — not something to back into via a client architecture choice.
+decision, not something to back into via a client architecture choice.
 
 ## Per-client plan
 
-### Phase 1 — Server prep (done alongside the `clients/` scaffold)
+### Phase 1: Server prep (done alongside the `clients/` scaffold)
 
 - `server/` move, done.
 - Open item, not yet decided: session lifetime for native clients. The
   current 30-minute idle timeout matches a browser-tab mental model; a
   native app likely wants "stay signed in" longer. Probably a longer
   configurable timeout for native sessions rather than a full redesign.
-- CORS (`RATATOSKR_EXTRA_ORIGINS`) is irrelevant to native clients — it's
+- CORS (`RATATOSKR_EXTRA_ORIGINS`) is irrelevant to native clients, as it's
   a browser-only enforcement mechanism. Nothing to add there for native
   clients specifically.
 
-### Phase 2 — Linux (released; open items below)
+### Phase 2: Linux (released; open items below)
 
 MVP scope, deliberately smaller than full web-UI parity:
 
@@ -259,7 +259,7 @@ MVP scope, deliberately smaller than full web-UI parity:
 - ✅ Server remembered between launches (`DesktopSessionStore`: address
   only, in the per-user config dir; the token is never written to disk)
 - ⬜ Stay signed in across launches: needs the token in the system
-  keyring (libsecret on Linux) — see "Desktop session storage" under
+  keyring (libsecret on Linux). See "Desktop session storage" under
   Phase 4, which covers all three desktop OSes
 - ⬜ Clean handling of every disconnect/error edge case (some exists via
   `RatatoskrConnectionException`/`RatatoskrApiException`, not exhaustively
@@ -282,16 +282,16 @@ skipped because its generated `.desktop` file can't carry the app ID or
 `StartupWMClass`. Pushing a `linux-vX.Y.Z` tag publishes a GitHub Release
 via `.github/workflows/linux-client-release.yml`. Details: `clients/README.md`.
 
-### Phase 3 — Android (released; biometrics are 3.1, Autofill 3.2)
+### Phase 3: Android (released; biometrics are 3.1, Autofill 3.2)
 
 Mostly reuse: `clients/shared`'s screens carry over directly. `:shared`
 gained an Android target (AGP's KMP library plugin, OkHttp engine) and
-`clients/android` is the app module — AGP 9 requires the app in its own
+`clients/android` is the app module. AGP 9 requires the app in its own
 module rather than an Android target on the KMP module. Real new work:
 
 - ✅ Session storage: `SessionStore` in commonMain (optional, like
   `PlatformFiles`; desktop's stores the server address only), implemented on Android as
-  `KeystoreSessionStore` — the token AES-GCM-encrypted under a
+  `KeystoreSessionStore`, with the token AES-GCM-encrypted under a
   non-exportable Keystore key. Not `EncryptedSharedPreferences`: that
   library was deprecated in 2025. Server address + token survive process
   death; an expired token lands on Unlock for the same server.
@@ -299,15 +299,15 @@ module rather than an Android target on the KMP module. Real new work:
   Tailscale) with an in-app warning on non-HTTPS addresses; no backups of
   the session; `FLAG_SECURE`.
 - ✅ Shared UI made width-adaptive for phones (max-width columns, scrolling
-  forms, compact vault toolbar) — no visual change on desktop.
+  forms, compact vault toolbar), with no visual change on desktop.
 - ✅ CSV import/export via the Storage Access Framework.
 - ✅ Signed APK released via `android-vX.Y.Z` tags
   (`.github/workflows/android-client-release.yml`).
 
-minSdk 26 (Android 8.0) — chosen because that's where the Autofill
+minSdk 26 (Android 8.0) was chosen because that's where the Autofill
 Framework starts, so the stretch goal below doesn't force a bump.
 
-### Phase 3.1 — Android biometric unlock (next up)
+### Phase 3.1: Android biometric unlock (next up)
 
 Goal: unlock with fingerprint or face instead of typing the master
 password, on the Unlock screen. The same idea later applies to Touch ID
@@ -384,11 +384,11 @@ together if it's ever wanted.
 - Shared code: add a `BiometricUnlock` interface in
   `clients/shared/.../platform/` alongside `SessionStore`, supplied by
   each platform's entry point and optional (null = feature hidden):
-  - `fun isAvailable(): Boolean` — hardware present and enrolled;
-  - `fun enrolledFor(serverUrl: String): String?` — the username, if set up;
-  - `suspend fun enrol(serverUrl: String, username: String, password: String): Boolean`
-    — shows the prompt;
-  - `suspend fun unlock(serverUrl: String): Pair<String, String>?` — shows
+  - `fun isAvailable(): Boolean`: hardware present and enrolled;
+  - `fun enrolledFor(serverUrl: String): String?`: the username, if set up;
+  - `suspend fun enrol(serverUrl: String, username: String, password: String): Boolean`:
+    shows the prompt;
+  - `suspend fun unlock(serverUrl: String): Pair<String, String>?`: shows
     the prompt, returns username + password, or null if cancelled or failed;
   - `fun clear()`.
 
@@ -416,7 +416,7 @@ only, and check what `canAuthenticate` reports). Cases:
 `adb` can't fake a fingerprint on a real device, so a person has to
 touch the sensor; script everything around that.
 
-### Phase 3.2 — Android Autofill
+### Phase 3.2: Android Autofill
 
 Goal: Ratatoskr as the phone's autofill service, filling logins in other
 apps and (via the browser) websites. This is a genuinely different
@@ -481,7 +481,7 @@ app and a few real sites.
 scrutiny on Play. GitHub Releases distribution isn't affected.
 
 Distribution: GitHub Releases APK first. Play Store is a later, deliberate
-decision — a password manager requesting autofill/accessibility
+decision. A password manager requesting autofill/accessibility
 permissions gets real scrutiny in Play's review process; not a v1
 assumption.
 
@@ -609,7 +609,7 @@ be written to disk in plain text**:
 The shared code needs no change: `AppState` already restores a token
 when the `SessionStore` returns one.
 
-### Phase 4 — Windows
+### Phase 4: Windows
 
 Mostly packaging on the desktop app that already exists: `clients/desktop`
 runs on Windows unchanged (Compose Desktop on the JVM), and its
@@ -674,7 +674,7 @@ users click *More info → Run anyway*, and the release notes must say so.
 Removing that needs a code-signing certificate (paid, or a hosted signing
 service), a cost decision for later.
 
-### Phase 5 — macOS (Apple silicon only)
+### Phase 5: macOS (Apple silicon only)
 
 Same pattern: packaging on the existing desktop app, with a `macOS {}`
 block already in `clients/desktop/build.gradle.kts`. **Deliverable:
@@ -756,9 +756,9 @@ interface):
   unsigned builds or label it clearly, and make this call together with
   the signing decision.
 
-### Phase 6 — iOS
+### Phase 6: iOS
 
-The newest, least battle-tested part of Compose Multiplatform — expect
+The newest, least battle-tested part of Compose Multiplatform, so expect
 more friction here than the other phases. Work: an `iosMain` for
 `:shared` (targets `iosArm64` + `iosSimulatorArm64`; the Ktor engine for
 iOS is `ktor-client-darwin`), an Xcode app project that hosts the Compose

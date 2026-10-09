@@ -30,11 +30,11 @@ import kotlinx.serialization.json.jsonPrimitive
 /** Thrown for any non-2xx response. `detail` is the server's own error
  * message (FastAPI's standard `{"detail": "..."}` error body) when one
  * could be parsed, so the UI can show the exact same wording the web UI
- * would -- never a generic "something went wrong". */
+ * would, never a generic "something went wrong". */
 class RatatoskrApiException(val statusCode: Int, val detail: String) : Exception(detail)
 
 /** Thrown when the server can't be reached at all (wrong address, server
- * down, no network) -- distinct from RatatoskrApiException so the UI can
+ * down, no network), distinct from RatatoskrApiException so the UI can
  * tell "your credentials are wrong" apart from "the server didn't answer". */
 class RatatoskrConnectionException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
@@ -43,7 +43,7 @@ private fun HttpStatusCode.isSuccess() = value in 200..299
 private val errorJson = Json { ignoreUnknownKeys = true }
 
 /** FastAPI's `detail` is a plain string for HTTPException, but a list of
- * `{loc, msg, ...}` objects for request-validation (422) errors -- e.g. a
+ * `{loc, msg, ...}` objects for request-validation (422) errors, e.g. a
  * master password under the 8-character minimum. Handle both, rather than
  * only the string form. */
 internal fun parseErrorDetail(body: String): String? {
@@ -64,7 +64,7 @@ internal fun parseErrorDetail(body: String): String? {
  * One instance per configured server. `baseUrl` is whatever the user typed
  * on the server-connect screen (e.g. "http://tempinfra.tail92211e.ts.net:8000"),
  * normalized to strip a trailing slash. `token` is set after a successful
- * unlock/setup/accept-invite and cleared on lock -- held in memory here;
+ * unlock/setup/accept-invite and cleared on lock. It's held in memory here;
  * AppState persists it (encrypted) only where the platform supplies a
  * SessionStore, and the server's idle timeout bounds it either way.
  */
@@ -238,7 +238,7 @@ class RatatoskrApiClient(baseUrl: String) {
         call<Unit> { http.delete("$apiBase/vault/$entryId/shares/$username") { authHeader(this) } }
     }
 
-    /** Raw CSV text, not a JSON model -- the export endpoint returns
+    /** Raw CSV text, not a JSON model. The export endpoint returns
      * text/csv directly, matching the web UI's download behavior. */
     suspend fun exportCsv(): String {
         val response = try {

@@ -5,7 +5,7 @@ class PickedFile(val name: String, val bytes: ByteArray)
 
 /**
  * File pickers for CSV import/export. Supplied by each platform's entry
- * point, the same way `appIcon` is -- commonMain has no file-dialog API of
+ * point, the same way `appIcon` is. commonMain has no file-dialog API of
  * its own, and each platform's picker is genuinely different (AWT/Swing on
  * desktop, the Storage Access Framework on Android, UIDocumentPicker on
  * iOS). When a platform doesn't supply one yet, the import/export buttons

@@ -6,7 +6,7 @@ browser, a Linux desktop app or an Android app, with more platforms on the
 way.
 
 Named for the squirrel who runs up and down Yggdrasil carrying messages
-between the eagle at its crown and the serpent at its roots — a fitting
+between the eagle at its crown and the serpent at its roots, a fitting
 namesake for something that carries your credentials exactly where they
 need to go, and nowhere else.
 
@@ -14,16 +14,16 @@ need to go, and nowhere else.
 
 | Platform | Status | Get it |
 |---|---|---|
-| **Web** | ✅ Available | Built into the server — open it in any browser |
-| **Linux** desktop | ✅ Available | [Releases](https://github.com/curtis04ben/Ratatoskr/releases) — "Ratatoskr Linux client" (`.rpm`, `.deb`, AppImage) |
-| **Android** | ✅ Available | [Releases](https://github.com/curtis04ben/Ratatoskr/releases) — "Ratatoskr Android" (`.apk`, Android 8.0+) |
+| **Web** | ✅ Available | Built into the server. Open it in any browser |
+| **Linux** desktop | ✅ Available | [Releases](https://github.com/curtis04ben/Ratatoskr/releases), "Ratatoskr Linux client" (`.rpm`, `.deb`, AppImage) |
+| **Android** | ✅ Available | [Releases](https://github.com/curtis04ben/Ratatoskr/releases), "Ratatoskr Android" (`.apk`, Android 8.0+) |
 | **Windows** | 🚧 In the works | Same desktop app as Linux; needs Windows packaging |
 | **macOS** | 🚧 In the works | Same desktop app as Linux; needs macOS packaging |
 | **iOS** | 🗓️ Planned | |
 | **Browser extension** | 🗓️ Planned | Separate project, using the same server API |
 
 All the apps are clients of a Ratatoskr server you host yourself. There's no
-hosted service and no account with anyone else — see
+hosted service and no account with anyone else. See
 [Getting started](#getting-started).
 
 ## What it does
@@ -72,15 +72,15 @@ comfortably on a NAS (TrueNAS, CasaOS) or any Docker host.
 is encrypted with a key derived from that person's master password using
 Argon2id, and the master password itself is never stored anywhere. Every
 entry has its own random key, and a copy of that key is sealed to each
-account allowed to open it — which is how sharing and revoking work without
+account allowed to open it, which is how sharing and revoking work without
 re-encrypting anything. The full design, including how admin access works
 and its one real limitation, is in
 [`server/README.md`](server/README.md#how-multi-user-security-works).
 
 **Worth knowing:** decryption happens on the server when you unlock, and
 the apps receive already-decrypted entries over the connection. That's why
-the server should stay on a private network — ideally reached over
-[Tailscale](https://tailscale.com) or similar — rather than exposed to the
+the server should stay on a private network, ideally reached over
+[Tailscale](https://tailscale.com) or similar, rather than exposed to the
 internet. Moving to true end-to-end encryption, where the server never sees
 plaintext, would be a deliberate redesign and isn't planned right now.
 
@@ -150,18 +150,18 @@ docs/                 Architecture and per-platform development plan
 Each part of Ratatoskr is versioned on its own, so updating one never
 forces a download of another:
 
-- **Server** — currently 2.4.0 (see the version history in
+- **Server**: currently 2.4.0 (see the version history in
   [`server/README.md`](server/README.md#version-history)); deployed from
   source with Docker.
-- **Linux app** — tags `linux-vX.Y.Z`, each a separate GitHub Release.
-- **Android app** — tags `android-vX.Y.Z`, each a separate GitHub Release.
+- **Linux app**: tags `linux-vX.Y.Z`, each a separate GitHub Release.
+- **Android app**: tags `android-vX.Y.Z`, each a separate GitHub Release.
 
 ## Development
 
-- [`docs/development-plan.md`](docs/development-plan.md) — why the project
+- [`docs/development-plan.md`](docs/development-plan.md): why the project
   is shaped this way, and the plan for each platform. Start here if you're
   picking up client work.
-- [`clients/README.md`](clients/README.md) — building, testing, packaging
+- [`clients/README.md`](clients/README.md): building, testing, packaging
   and releasing the apps.
-- [`server/README.md`](server/README.md) — running the server locally, the
+- [`server/README.md`](server/README.md): running the server locally, the
   REST API, and configuration.
