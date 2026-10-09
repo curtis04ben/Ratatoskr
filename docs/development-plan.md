@@ -14,8 +14,8 @@ each time.
 | Component | Version | Tag / release | Notes |
 |---|---|---|---|
 | Server + web UI | 2.4.0 | none (deployed from source) | `server/app/main.py` holds the version |
-| Linux app | 0.1.3 | `linux-v0.1.3` | `ratatoskrDesktopVersion` in `clients/gradle.properties` |
-| Android app | 0.1.2 | `android-v0.1.2` | `ratatoskrAndroidVersion`; release key + 4 GitHub secrets in place |
+| Linux app | 0.1.4 | `linux-v0.1.4` | `ratatoskrDesktopVersion` in `clients/gradle.properties` |
+| Android app | 0.1.3 | `android-v0.1.3` | `ratatoskrAndroidVersion`; release key + 4 GitHub secrets in place |
 | Windows / macOS | not yet | not yet | Phases 4/5 below: packaging on the same `desktop/` module |
 | Android biometric unlock | not yet | not yet | Phase 3.1 below |
 | Android Autofill | not yet | not yet | Phase 3.2 below |
